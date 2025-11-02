@@ -24,7 +24,7 @@
 ;;==============================================================FUNÇÕES AUXILIARES DOS FICHEIROS=========================================================;
 
 (defun pasta ()
-  (let ((path "C:\\Users\\bruno\\OneDrive\\Ambiente de Trabalho\\GitHub\\ProjetoIA25-26\\Projeto"))
+  (let ((path "C:\\Users\\danie\\Downloads\\Projeto_IA_18_12\\Projeto"))
     path))
 
 (defun diretorio (ficheiro)
@@ -32,8 +32,8 @@
 
 
 (defun iniciar-jogo ()
-  (load (compile-file (diretorio "\\puzzle.lisp")))
-  (load (compile-file (diretorio "\\procura.lisp")))
+  (load (compile-file (diretorio "puzzle.lisp")))
+  (load (compile-file (diretorio "procura.lisp")))
   (menu-Principal))
 
 
