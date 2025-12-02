@@ -34,3 +34,32 @@
         )
     )
 )
+
+;;; 4. Dados e Menu Principal
+
+;; 4.1. Definição do Tabuleiro Padrão (Inglês)
+;; 1 = Pino, 0 = Vazio, NIL = Inválido
+(defparameter *tabuleiro-solitario*
+    '((nil nil 1 1 1 nil nil)
+      (nil nil 1 1 1 nil nil)
+      (1 1 1 1 1 1 1)
+      (1 1 1 0 1 1 1) ; Centro vazio
+      (1 1 1 1 1 1 1)
+      (nil nil 1 1 1 nil nil)
+      (nil nil 1 1 1 nil nil))
+)
+
+;; 4.2. Função do Menu Principal
+(defun menu ()
+    "Função principal para iniciar o programa."
+    (format t "~%========================================~%")
+    (format t "    PROJETO SOLITÁRIO - INTELIGÊNCIA ARTIFICIAL    ~%")
+    (format t "========================================~%")
+    (format t "Escolha o algoritmo de procura:~%")
+    (format t "1. BFS (Procura em Largura)~%")
+    (format t "2. DFS (Procura em Profundidade)~%")
+    (format t "3. A* (A-Star) com Heurística 1 (Pinos Restantes)~%")    
+)
+
+;; HA MAIS
+
