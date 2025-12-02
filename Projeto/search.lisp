@@ -177,5 +177,28 @@
 )
 
 (defun a* (no-inicial funcao-heristica &optional (abertos (list no-inicial)) (fechados nil))
-    
+    "Implementa a procura A* (A-Estrela)."
+    (if (null abertos)
+        nil ; Falha: Abertos está vazia
+
+        (let ((no-atual (car abertos))) ; 'abertos' está sempre ordenada
+            (if (no-solucaop no-atual)
+                no-atual ; Sucesso
+
+                ;; Gestão de repetidos
+                (if (no-existep-custo-menor no-atual fechados)
+                    ;; Encontrado em FECHADOS um nó melhor. Ignorar este ramo.
+                    (a* no-inicial funcao-heristica (cdr abertos) fechados)
+
+                    ;; Nó novo ou melhor. Expandir.
+                    (let* ((novos-sucessores (sucessores no-atual funcao-heristica))
+                           (fechados-atualizados (cons no-atual fechados))
+                           (abertos-atualizados (colocar-sucessores-em-abertos (cdr abertos) novos-sucessores)))
+
+                        (a* no-inicial funcao-heristica abertos-atualizados fechados-atualizados)
+                    )
+                )
+            )
+        )
+    )
 )
