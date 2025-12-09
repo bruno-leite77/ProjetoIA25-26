@@ -1,5 +1,5 @@
-(defun exemplo ()
-'(
+;; exemplo
+(
  (nil nil 1 1 1 nil nil)
  (nil nil 1 1 1 nil nil)
  ( 1 1 1 1 1 1 1)
@@ -8,10 +8,9 @@
  (nil nil 1 1 1 nil nil)
  (nil nil 1 1 1 nil nil)
 )
-)
 
-(defun problema-A ()
-'(
+;; problema-A
+(
  (nil nil 0 0 0 nil nil)
  (nil nil 0 0 0 nil nil)
  ( 0 0 0 0 0 0 0)
@@ -20,10 +19,9 @@
  (nil nil 0 1 0 nil nil)
  (nil nil 0 0 0 nil nil)
 )
-)
 
-(defun problema-B ()
-'(
+;; problema-B
+(
  (nil nil 0 0 0 nil nil)
  (nil nil 0 0 0 nil nil)
  ( 0 0 0 0 0 0 0)
@@ -32,10 +30,9 @@
  (nil nil 0 0 0 nil nil)
  (nil nil 0 0 0 nil nil)
 )
-)
 
-(defun problema-C ()
-'(
+;; problema-C
+(
  (nil nil 0 0 0 nil nil)
  (nil nil 0 0 0 nil nil)
  ( 0 0 0 0 1 0 0)
@@ -44,10 +41,9 @@
  (nil nil 0 0 0 nil nil)
  (nil nil 0 0 0 nil nil)
 )
-)
 
-(defun problema-D ()
-'(
+;; problema-D
+(
  (nil nil 0 0 0 nil nil)
  (nil nil 0 0 1 nil nil)
  ( 0 0 0 0 1 1 0)
@@ -56,10 +52,9 @@
  (nil nil 0 0 0 nil nil)
  (nil nil 0 0 0 nil nil)
 )
-)
 
-(defun problema-E ()
-'(
+;; problema-E
+(
  (nil nil 0 0 0 nil nil)
  (nil nil 0 0 0 nil nil)
  ( 0 0 0 1 1 1 1)
@@ -68,10 +63,9 @@
  (nil nil 0 0 0 nil nil)
  (nil nil 0 0 0 nil nil)
 )
-)
 
-(defun problema-F ()
-'(
+;; problema-F
+(
  (nil nil 1 1 1 nil nil)
  (nil nil 1 1 1 nil nil)
  ( 1 1 1 1 1 1 1)
@@ -79,6 +73,5 @@
  ( 1 1 1 1 1 1 1)
  (nil nil 1 1 1 nil nil)
  (nil nil 1 1 1 nil nil)
-)
 )
 
