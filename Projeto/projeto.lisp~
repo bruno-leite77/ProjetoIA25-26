@@ -7,10 +7,8 @@
 ;; Guilherme Cruz    (2024129841)
 
 
-;; Antes de começar utilizar este comando para selecionar o diretorio do projeto
-;; (hcl:change-directory "C:\\Users\\bruno\\Desktop\\ProjetoIA25-26\\Projeto")
-;; Depois compilar o buffer do projeto.lisp
-
+"Para situar o diretório do jogo fazer: "
+"(hcl:change-directory ""C:\\Users\\bruno\\Desktop\\ProjetoIA25-26\\Projeto"")"
 ;; Carregar Ficheiros
 (load "puzzle.lisp")
 (load "procura.lisp")
@@ -25,9 +23,9 @@
       (ler-Ficheiro "problemas.dat")
   )
  
-  (format t "~%  ===============================================~%")
-  (format t "  = PROJETO SOLITÁRIO - INTELIGÊNCIA ARTIFICIAL =    ~%")
-  (format t "  ===============================================~%")
+  (format t "~%========================================~%")
+  (format t "    PROJETO SOLITÁRIO - INTELIGÊNCIA ARTIFICIAL    ~%")
+  (format t "========================================~%")
   (format t "~%  Escolha uma opção:")
   (format t "~% 1. Resolver um problema")
   (format t "~% 2. Sair")
