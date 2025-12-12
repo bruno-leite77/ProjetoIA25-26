@@ -8,10 +8,15 @@
 
 ;; Antes de comecar utilizar este comando para selecionar o diretorio do projeto
 ;; (hcl:change-directory "C:\\Users\\bruno\\Desktop\\ProjetoIA25-26\\Projeto")
+;; (hcl:change-directory "C:\\Users\\bruno\\OneDrive\\Ambiente de Trabalho\\GitHub\\ProjetoIA25-26\\Projeto")
+;; (load "projeto.lisp")
 
-;; Carregar Ficheiros
-(load "puzzle.lisp")
-(load "procura.lisp")
+
+;; Carregar e Compilar Ficheiros
+(compile-file "puzzle.lisp")
+(load "puzzle")
+(compile-file "procura.lisp")
+(load "procura")
 
 ;; Variavel Global
 (defparameter *lista-problemas* nil "Lista de tabuleiros carregada do ficheiro")
@@ -89,7 +94,7 @@
 (defun menu-principal ()
   (if (null *lista-problemas*)
       (ler-ficheiro "problemas.dat"))
- 
+ (loop
   (format t "~%  ================================================~%")
   (format t "  =  PROJETO SOLITÁRIO - INTELIGÊNCIA ARTIFICIAL =    ~%")
   (format t "  ================================================~%")
@@ -99,9 +104,9 @@
   (format t "~% Opção > ")
   (let ((opcao (read)))
     (cond
-     ((= opcao 1) (resolver-problema) (menu-principal))
-     ((= opcao 2) (format t "~% A sair...") (values))
-     (t (progn (format t "~% Opçãoo inválida! Tente novamente.") (menu-principal))))))
+     ((= opcao 1) (resolver-problema))
+     ((= opcao 2) (format t "~% A sair...") (return))
+     (t (format t "~% Opção inválida! Tente novamente."))))))
 
 (defun resolver-problema ()
   (format t "~%Escolha o numero do problema (1 a ~d): " (length *lista-problemas*))

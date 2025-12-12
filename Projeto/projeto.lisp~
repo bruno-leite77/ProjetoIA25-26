@@ -8,9 +8,14 @@
 
 ;; Antes de comecar utilizar este comando para selecionar o diretorio do projeto
 ;; (hcl:change-directory "C:\\Users\\bruno\\Desktop\\ProjetoIA25-26\\Projeto")
+;; (hcl:change-directory "C:\\Users\\bruno\\OneDrive\\Ambiente de Trabalho\\GitHub\\ProjetoIA25-26\\Projeto")
+;; (load "projeto.lisp")
 
-;; Carregar Ficheiros
+
+;; Carregar e Compilar Ficheiros
+(compile-file "puzzle.lisp")
 (load "puzzle.lisp")
+(compile-file "procura.lisp")
 (load "procura.lisp")
 
 ;; Variavel Global
@@ -89,19 +94,19 @@
 (defun menu-principal ()
   (if (null *lista-problemas*)
       (ler-ficheiro "problemas.dat"))
- 
-  (format t "~%========================================~%")
-  (format t "    PROJETO SOLIT√ÅRIO - INTELIG√äNCIA ARTIFICIAL    ~%")
-  (format t "========================================~%")
-  (format t "~%  Escolha uma op√ß√£o:")
+ (loop
+  (format t "~%  ================================================~%")
+  (format t "  =  PROJETO SOLIT¡RIO - INTELIG NCIA ARTIFICIAL =    ~%")
+  (format t "  ================================================~%")
+  (format t "~%  Escolha uma opÁ„o:")
   (format t "~% 1. Resolver um problema")
   (format t "~% 2. Sair")
-  (format t "~% Op√ß√£o > ")
+  (format t "~% OpÁ„o > ")
   (let ((opcao (read)))
     (cond
-     ((= opcao 1) (resolver-problema) (menu-principal))
-     ((= opcao 2) (format t "~% A sair...") (values))
-     (t (progn (format t "~% Op√ß√£o inv√°lida! Tente novamente.") (menu-principal))))))
+     ((= opcao 1) (resolver-problema))
+     ((= opcao 2) (format t "~% A sair...") (return))
+     (t (format t "~% OpÁ„o inv·lida! Tente novamente."))))))
 
 (defun resolver-problema ()
   (format t "~%Escolha o numero do problema (1 a ~d): " (length *lista-problemas*))
