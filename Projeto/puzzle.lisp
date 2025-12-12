@@ -49,7 +49,6 @@
          (c-dest (+ c dc))
          (l-meio (+ l (/ dl 2)))
          (c-meio (+ c (/ dc 2))))
-    ;; Aplica as 3 alteracoes sequencialmente criando novos estados
     (substituir l-dest c-dest
                 (substituir l-meio c-meio
                             (substituir l c tabuleiro 0)
@@ -57,8 +56,7 @@
                 1)))
 
 ;;; ---------------------------------------------------------
-;;; 3. OPERADORES (Conforme Lab 7)
-;;; Validam condicoes e retornam novo estado ou nil
+;;; 3. OPERADORES (Conforme Lab 7 - Estilo Funcional)
 ;;; ---------------------------------------------------------
 
 (defun operador-cd (l c tab)
@@ -120,23 +118,27 @@
       (+ (count 1 (car tabuleiro)) 
          (contar-pinos (cdr tabuleiro)))))
 
-(defun contar-jogadas (tab l c)
-  "Conta recursivamente quantas jogadas sao possiveis no estado atual."
-  (cond ((> l 7) 0) ;; Fim das linhas
-        ((> c 7) (contar-jogadas tab (1+ l) 1)) ;; Proxima linha
-        (t (+ (if (operador-cd l c tab) 1 0)
-              (if (operador-ce l c tab) 1 0)
-              (if (operador-cc l c tab) 1 0)
-              (if (operador-cb l c tab) 1 0)
-              (contar-jogadas tab l (1+ c))))))
+(defun peca-movel-p (l c tab)
+  "Verifica se a peca em (l,c) tem pelo menos um movimento."
+  (or (operador-cd l c tab)
+      (operador-ce l c tab)
+      (operador-cc l c tab)
+      (operador-cb l c tab)))
+
+(defun contar-pecas-moveis (tab l c)
+  "o(x): Conta quantas pecas conseguem mover-se."
+  (cond ((> l 7) 0)
+        ((> c 7) (contar-pecas-moveis tab (1+ l) 1))
+        (t (+ (if (peca-movel-p l c tab) 1 0)
+              (contar-pecas-moveis tab l (1+ c))))))
 
 (defun h1-base (estado)
-  "Heuristica Base: h(x) = 1 / (jogadas_possiveis + 1).
-   Privilegia estados com maior mobilidade."
-  (let ((jogadas (contar-jogadas estado 1 1)))
-    (/ 1.0 (1+ jogadas))))
+  "Heuristica Base: h(x) = 1 / (o(x) + 1).
+   Privilegia tabuleiros com mais pecas moveis."
+  (let ((ox (contar-pecas-moveis estado 1 1)))
+    (/ 1.0 (1+ ox))))
 
 (defun h2-extra (estado)
   "Heuristica Extra: Numero de Pinos - 1.
-   Admissivel pois cada jogada remove exatamente 1 pino."
+   Estima a distancia exata ao objetivo (sem contar bloqueios)."
   (1- (contar-pinos estado)))

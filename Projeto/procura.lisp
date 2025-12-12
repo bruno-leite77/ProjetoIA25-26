@@ -1,6 +1,6 @@
 ;;; procura.lisp
 ;;; Algoritmos de Procura e Estruturas de Dados
-;;; Implementação baseada nos Guiões de Laboratório 8 e 9
+;;; Implementacao baseada nos Guioes de Laboratorio 8 e 9
 
 ;;; ---------------------------------------------------------
 ;;; 1. TIPO ABSTRATO DE DADOS: NO (Conforme Lab 8)
@@ -8,186 +8,120 @@
 ;;; ---------------------------------------------------------
 
 (defun criar-no (estado &optional (g 0) (h 0) (pai nil))
-  "Construtor do nó: aceita estado, g, h e pai."
+  "Construtor do no: aceita estado, g, h e pai."
   (list estado g h pai))
 
-(defun no-estado (no)
-  "Seletor: Retorna o estado do nó."
-  (first no))
-
-(defun no-profundidade (no)
-  "Seletor: Retorna a profundidade (g) do nó."
-  (second no))
-
-(defun no-heuristica (no)
-  "Seletor: Retorna a heurística (h) do nó."
-  (third no))
-
-(defun no-pai (no)
-  "Seletor: Retorna o nó pai."
-  (fourth no))
-
-(defun no-custo (no)
-  "Seletor: Retorna o custo total f(n) = g(n) + h(n)."
-  (+ (no-profundidade no) (no-heuristica no)))
+(defun no-estado (no) (first no))
+(defun no-profundidade (no) (second no)) ; g(n)
+(defun no-g (no) (second no))            ; Alias
+(defun no-heuristica (no) (third no))    ; h(n)
+(defun no-pai (no) (fourth no))
+(defun no-custo (no) (+ (no-g no) (no-heuristica no))) ; f(n)
 
 ;;; ---------------------------------------------------------
-;;; 2. FUNÇÕES AUXILIARES DE PROCURA (Lab 8)
+;;; 2. FUNCOES AUXILIARES E GERACAO
 ;;; ---------------------------------------------------------
 
 (defun solucaop (no)
-  "Verifica se um nó é solução (apenas 1 pino restante)."
-  ;; Nota: conta-pinos deve estar definida em puzzle.lisp
+  "Verifica se um no e soluÃ§Ã£o (apenas 1 pino restante)."
   (= (contar-pinos (no-estado no)) 1))
 
 (defun ordenar-nos (lista-nos)
-  "Ordena uma lista de nós por ordem crescente de custo f(n)."
+  "Ordena uma lista de nos por ordem crescente de custo f(n)."
   (sort lista-nos #'< :key #'no-custo))
 
 (defun colocar-sucessores-em-abertos (abertos sucessores)
-  "Junta sucessores à lista de abertos e ordena-a (para o A*)."
+  "Junta sucessores a lista de abertos e ordena-a (para o A*)."
   (ordenar-nos (append abertos sucessores)))
 
-;;; ---------------------------------------------------------
-;;; 3. GERAÇÃO DE SUCESSORES
-;;; ---------------------------------------------------------
-
 (defun gerar-sucessores (no heuristica-fn)
-  "Gera a lista de nós sucessores a partir de um nó."
-  (let ((estado (no-estado no))
-        (g (no-profundidade no)))
+  "Gera a lista de nos sucessores a partir de um no."
+  (let ((estado (no-estado no)) (g (no-g no)))
     (gerar-sucessores-rec estado g heuristica-fn 1 1)))
 
-(defun gerar-sucessores-rec (tabuleiro g-pai heuristica-fn l c)
-  "Função recursiva para percorrer o tabuleiro e gerar sucessores."
-  (cond
-    ((> l 7) nil) ;; Fim do tabuleiro
-    ((> c 7) (gerar-sucessores-rec tabuleiro g-pai heuristica-fn (1+ l) 1)) ;; Próxima linha
-    (t
-     (append (tentar-operadores l c tabuleiro g-pai heuristica-fn)
-             (gerar-sucessores-rec tabuleiro g-pai heuristica-fn l (1+ c))))))
+(defun gerar-sucessores-rec (tab g h-fn l c)
+  (cond ((> l 7) nil)
+        ((> c 7) (gerar-sucessores-rec tab g h-fn (1+ l) 1))
+        (t (append (tentar-ops l c tab g h-fn)
+                   (gerar-sucessores-rec tab g h-fn l (1+ c))))))
 
-(defun tentar-operadores (l c tab g-pai h-fn)
-  "Aplica todos os operadores numa posição e cria os nós resultantes."
-  (let ((ops (operadores))) ;; operadores definido em puzzle.lisp
+(defun tentar-ops (l c tab g h-fn)
+  (let ((ops (operadores)))
     (mapcan (lambda (op)
-              (let ((novo-tab (funcall op l c tab)))
-                (if novo-tab
-                    (list (criar-no novo-tab 
-                                    (1+ g-pai) 
-                                    (if h-fn (funcall h-fn novo-tab) 0) 
-                                    nil)) ;; O pai será atribuído na expansão
-                    nil)))
+              (let ((nt (funcall op l c tab)))
+                (if nt (list (criar-no nt (1+ g) 
+                                       (if h-fn (funcall h-fn nt) 0) 
+                                       nil)) nil)))
             ops)))
 
 ;;; ---------------------------------------------------------
-;;; 4. MÉTRICAS DE DESEMPENHO (Conforme Lab 9)
+;;; 3. METRICAS DE DESEMPENHO (Conforme Lab 9)
 ;;; ---------------------------------------------------------
 
 (defun penetrancia (L T-total)
-  "Calcula a penetrância P = L / T."
   (if (zerop T-total) 0 (float (/ L T-total))))
 
 (defun ramificacao-media (L T-total)
-  "Calcula o fator de ramificação médio (B*) usando o método da bissecção."
-  ;; Resolve a equação: B^L + B^(L-1) + ... + B + 1 = T
-  (if (<= T-total L) 
-      1.0
-      (bisseccao L T-total 1.0 10.0 0.01)))
+  (if (<= T-total L) 1.0 (bisseccao L T-total 1.0 10.0 0.01)))
 
 (defun bisseccao (L T-alvo min max erro)
-  "Método numérico da bissecção para encontrar a base B."
-  (let* ((b (/ (+ min max) 2.0))
-         (val (polinomio-b b L)))
+  (let* ((b (/ (+ min max) 2.0)) (val (polinomio-b b L)))
     (cond ((< (abs (- val T-alvo)) erro) b)
           ((> val T-alvo) (bisseccao L T-alvo min b erro))
           (t (bisseccao L T-alvo b max erro)))))
 
 (defun polinomio-b (b L)
-  "Calcula o somatório da série geométrica para a árvore."
-  (if (= b 1) 
-      (1+ L)
-      (/ (- (expt b (1+ L)) 1) (- b 1))))
+  (if (= b 1) (1+ L) (/ (- (expt b (1+ L)) 1) (- b 1))))
 
 ;;; ---------------------------------------------------------
-;;; 5. ALGORITMOS DE PROCURA
-;;; Retorno: (nó-final nos-gerados nos-expandidos tempo-ms)
+;;; 4. ALGORITMOS DE PROCURA (Retorno: no, gerados, expandidos, tempo)
 ;;; ---------------------------------------------------------
 
-;;; BFS - Procura em Largura (FIFO)
 (defun bfs (no-inicial)
-  (let ((inicio (get-internal-run-time))
-        (gerados 1)
-        (expandidos 0))
+  (let ((inicio (get-internal-run-time)) (ger 1) (exp 0))
     (labels ((bfs-rec (abertos fechados)
                (if (null abertos) nil
                    (let ((atual (car abertos)))
                      (if (solucaop atual)
-                         (list atual gerados expandidos (- (get-internal-run-time) inicio))
+                         (list atual ger exp (- (get-internal-run-time) inicio))
                          (if (member (no-estado atual) fechados :test #'equal)
                              (bfs-rec (cdr abertos) fechados)
-                             (progn
-                               (incf expandidos)
-                               (let ((sucessores (gerar-sucessores atual nil)))
-                                 ;; Atribuir pai e g
-                                 (setf sucessores (mapcar (lambda (s) (criar-no (no-estado s) (no-profundidade s) 0 atual)) sucessores))
-                                 (incf gerados (length sucessores))
-                                 (bfs-rec (append (cdr abertos) sucessores)
-                                          (cons (no-estado atual) fechados))))))))))
+                             (progn (incf exp)
+                               (let ((suc (gerar-sucessores atual nil)))
+                                 (setf suc (mapcar (lambda (s) (criar-no (no-estado s) (no-g s) 0 atual)) suc))
+                                 (incf ger (length suc))
+                                 (bfs-rec (append (cdr abertos) suc) (cons (no-estado atual) fechados))))))))))
       (bfs-rec (list no-inicial) nil))))
 
-;;; DFS - Procura em Profundidade (LIFO com limite)
 (defun dfs (no-inicial prof-max)
-  (let ((inicio (get-internal-run-time))
-        (gerados 1)
-        (expandidos 0))
+  (let ((inicio (get-internal-run-time)) (ger 1) (exp 0))
     (labels ((dfs-rec (abertos fechados)
                (if (null abertos) nil
                    (let ((atual (car abertos)))
                      (cond ((solucaop atual) 
-                            (list atual gerados expandidos (- (get-internal-run-time) inicio)))
-                           ((> (no-profundidade atual) prof-max) 
-                            (dfs-rec (cdr abertos) fechados))
-                           ((member (no-estado atual) fechados :test #'equal) 
-                            (dfs-rec (cdr abertos) fechados))
-                           (t 
-                            (incf expandidos)
-                            (let ((sucessores (gerar-sucessores atual nil)))
-                              (setf sucessores (mapcar (lambda (s) (criar-no (no-estado s) (no-profundidade s) 0 atual)) sucessores))
-                              (incf gerados (length sucessores))
-                              (dfs-rec (append sucessores (cdr abertos))
-                                       (cons (no-estado atual) fechados)))))))))
+                            (list atual ger exp (- (get-internal-run-time) inicio)))
+                           ((> (no-g atual) prof-max) (dfs-rec (cdr abertos) fechados))
+                           ((member (no-estado atual) fechados :test #'equal) (dfs-rec (cdr abertos) fechados))
+                           (t (incf exp)
+                              (let ((suc (gerar-sucessores atual nil)))
+                                (setf suc (mapcar (lambda (s) (criar-no (no-estado s) (no-g s) 0 atual)) suc))
+                                (incf ger (length suc))
+                                (dfs-rec (append suc (cdr abertos)) (cons (no-estado atual) fechados)))))))))
       (dfs-rec (list no-inicial) nil))))
 
-;;; A* - Procura A-Estrela (Ordenada por custo f)
 (defun a-star (no-inicial h-fn)
-  (let ((inicio (get-internal-run-time))
-        (gerados 1)
-        (expandidos 0))
+  (let ((inicio (get-internal-run-time)) (ger 1) (exp 0))
     (labels ((a-star-rec (abertos fechados)
                (if (null abertos) nil
                    (let ((atual (car abertos)))
                      (if (solucaop atual) 
-                         (list atual gerados expandidos (- (get-internal-run-time) inicio))
-                         
-                         ;; Otimização Lab 8: Verificar se existe em fechados com menor custo
+                         (list atual ger exp (- (get-internal-run-time) inicio))
                          (if (and (member (no-estado atual) fechados :test #'equal)
-                                  (<= (no-custo (find (no-estado atual) fechados :key #'no-estado :test #'equal)) 
-                                      (no-custo atual)))
+                                  (<= (no-custo (find (no-estado atual) fechados :key #'no-estado :test #'equal)) (no-custo atual)))
                              (a-star-rec (cdr abertos) fechados)
-                             
-                             (progn
-                               (incf expandidos)
-                               (let ((sucessores (gerar-sucessores atual h-fn)))
-                                 ;; Atribuir pai e calcular heurística
-                                 (setf sucessores (mapcar (lambda (s) 
-                                                            (criar-no (no-estado s) 
-                                                                      (no-profundidade s) 
-                                                                      (no-heuristica s) 
-                                                                      atual)) 
-                                                          sucessores))
-                                 (incf gerados (length sucessores))
-                                 ;; Ordenar abertos (Lab 8)
-                                 (a-star-rec (colocar-sucessores-em-abertos (cdr abertos) sucessores)
-                                             (cons (no-estado atual) fechados)))))))))))
-      (a-star-rec (list no-inicial) nil)))
+                             (progn (incf exp)
+                               (let ((suc (gerar-sucessores atual h-fn)))
+                                 (setf suc (mapcar (lambda (s) (criar-no (no-estado s) (no-g s) (no-heuristica s) atual)) suc))
+                                 (incf ger (length suc))
+                                 (a-star-rec (colocar-sucessores-em-abertos (cdr abertos) suc) (cons (no-estado atual) fechados))))))))))
+      (a-star-rec (list no-inicial) nil))))
