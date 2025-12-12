@@ -1,0 +1,172 @@
+;;; projeto.lisp
+;;; Ponto de entrada do Projeto de Inteligencia Artificial
+;;; Integra Leitura de Ficheiros, Menus, Escrita de Logs e Apresentacao de Resultados
+;;; Autores: António Guerreiro, Bruno Leite, Guilherme Cruz
+
+;;; Carrega os modulos necessarios (assumindo mesma pasta)
+(load "puzzle.lisp")
+(load "procura.lisp")
+
+(defparameter *lista-problemas* nil "Lista de tabuleiros carregada do ficheiro")
+
+;;; ---------------------------------------------------------
+;;; 1. LEITURA DE FICHEIROS (IO)
+;;; ---------------------------------------------------------
+
+(defun ler-ficheiro (nome-ficheiro)
+  "Le o ficheiro problemas.dat e carrega a lista global *lista-problemas*."
+  (if (probe-file nome-ficheiro)
+      (with-open-file (in nome-ficheiro :direction :input)
+        (setf *lista-problemas* (loop for linha = (read in nil 'eof)
+                                      until (eq linha 'eof)
+                                      collect linha))
+        (format t "~%Problemas carregados com sucesso.~%"))
+      (format t "~%Erro: Ficheiro '~a' nao encontrado.~%" nome-ficheiro)))
+
+;;; ---------------------------------------------------------
+;;; 2. ESCRITA DE LOGS (Conforme Lab 9)
+;;; ---------------------------------------------------------
+
+(defun escrever-log (resultado algoritmo problema-id)
+  "Escreve o resultado da procura no ficheiro log.dat (append)."
+  (with-open-file (out "log.dat" 
+                       :direction :output 
+                       :if-exists :append 
+                       :if-does-not-exist :create)
+    (if (null resultado)
+        (format out "~%Data: ~a | Problema: ~d | Algoritmo: ~a | Resultado: FALHOU" 
+                (get-universal-time) problema-id algoritmo)
+        (let* ((no-final (first resultado))
+               (gerados (second resultado))
+               (expandidos (third resultado))
+               (tempo (fourth resultado))
+               (comprimento (no-profundidade no-final))
+               (pen (penetrancia comprimento gerados))
+               (ram (ramificacao-media comprimento gerados)))
+          
+          (format out "~%Data: ~a | Problema: ~d | Algoritmo: ~a | Solucao: ~d passos | Gerados: ~d | Expandidos: ~d | Tempo: ~d ms | Penetrancia: ~5,3f | Ramificacao: ~5,3f"
+                  (get-universal-time) problema-id algoritmo comprimento gerados expandidos tempo pen ram)))))
+
+;;; ---------------------------------------------------------
+;;; 3. INTERFACE E VISUALIZACAO
+;;; ---------------------------------------------------------
+
+(defun imprimir-tabuleiro (tabuleiro)
+  "Imprime o tabuleiro formatado linha a linha."
+  (dolist (linha tabuleiro)
+    (format t "    ~a~%" linha)))
+
+(defun mostrar-solucao (resultado)
+  "Recebe o resultado da procura (no, gerados, exp, tempo) e mostra estatisticas."
+  (if (null resultado)
+      (format t "~%--- NENHUMA SOLUCAO ENCONTRADA ---~%")
+      (let* ((no-final (first resultado))
+             (gerados (second resultado))
+             (expandidos (third resultado))
+             (tempo (fourth resultado))
+             (caminho nil)
+             (atual no-final))
+        
+        ;; Reconstruir o caminho do fim para o inicio
+        (loop while atual do
+              (push atual caminho)
+              (setf atual (no-pai atual)))
+        
+        (let ((comprimento (1- (length caminho)))) ;; L
+          (format t "~%========================================~%")
+          (format t "          SOLUCAO ENCONTRADA            ~%")
+          (format t "========================================~%")
+          (format t "Estatisticas:~%")
+          (format t "  > Tempo de Execucao: ~d ms~%" tempo)
+          (format t "  > Nos Gerados (T):   ~d~%" gerados)
+          (format t "  > Nos Expandidos:    ~d~%" expandidos)
+          (format t "  > Comprimento (L):   ~d passos~%" comprimento)
+          (format t "  > Penetrancia (P):   ~5,3f~%" (penetrancia comprimento gerados))
+          (format t "  > Ramificacao (B*):  ~5,3f~%" (ramificacao-media comprimento gerados))
+          (format t "----------------------------------------~%")
+          
+          ;; Mostrar passos
+          (dolist (no caminho)
+            (format t "Estado (g=~d, h=~d, f=~d):~%" 
+                    (no-profundidade no) (no-heuristica no) (no-custo no))
+            (imprimir-tabuleiro (no-estado no))
+            (format t "   |~%   v~%"))
+          (format t " (FIM)~%")))))
+
+;;; ---------------------------------------------------------
+;;; 4. MENUS (Recursivos conforme regras do projeto)
+;;; ---------------------------------------------------------
+
+(defun menu-principal ()
+  "Menu principal do sistema."
+  ;; Tenta carregar ficheiro se lista estiver vazia
+  (if (null *lista-problemas*)
+      (ler-ficheiro "problemas.dat"))
+
+  (format t "~%~%=== JOGO DO SOLITARIO ===~%")
+  (format t "1. Resolver Problema~%")
+  (format t "2. Sair~%")
+  (format t "Opcao > ")
+  
+  (let ((opcao (read)))
+    (cond
+      ((= opcao 1) 
+       (menu-resolver)
+       (menu-principal)) ;; Volta ao menu (recursao em vez de loop)
+      ((= opcao 2) 
+       (format t "~%A sair...~%")
+       (values)) ;; Termina suavemente
+      (t 
+       (format t "~%Opcao invalida.~%") 
+       (menu-principal)))))
+
+(defun executar-algoritmo (tabuleiro alg)
+  "Executa o algoritmo escolhido e retorna o resultado."
+  (cond 
+    ((= alg 1) ;; BFS
+     (bfs (criar-no tabuleiro)))
+    
+    ((= alg 2) ;; DFS
+     (format t "Profundidade Maxima > ")
+     (let ((prof (read)))
+       (dfs (criar-no tabuleiro) prof)))
+    
+    ((= alg 3) ;; A* Base
+     (a-star (criar-no tabuleiro) #'h1-base))
+    
+    ((= alg 4) ;; A* Extra
+     (a-star (criar-no tabuleiro) #'h2-extra))
+    
+    (t nil)))
+
+(defun menu-resolver ()
+  "Menu de selecao de problema e algoritmo."
+  (format t "~%Escolha o problema (1 a ~d): " (length *lista-problemas*))
+  (let ((n (read)))
+    (if (and (integerp n) (>= n 1) (<= n (length *lista-problemas*)))
+        (let ((tab-inicial (nth (1- n) *lista-problemas*)))
+          (format t "~%Algoritmo:~%")
+          (format t "1. BFS (Largura)~%")
+          (format t "2. DFS (Profundidade)~%")
+          (format t "3. A* (Heuristica Base: Mobilidade)~%")
+          (format t "4. A* (Heuristica Extra: Contagem Pinos)~%")
+          (format t "Opcao > ")
+          
+          (let ((alg (read)))
+            (format t "~%A pensar... (pode demorar)~%")
+            (let ((resultado (executar-algoritmo tab-inicial alg)))
+              
+              ;; Mostra no ecra
+              (mostrar-solucao resultado)
+              
+              ;; Escreve no ficheiro log.dat (Lab 9)
+              (if resultado
+                  (progn
+                    (escrever-log resultado alg n)
+                    (format t "~%Resultado gravado em 'log.dat'.~%"))
+                  (format t "~%Nao foi encontrada solucao.~%")))))
+        
+        (format t "~%Numero de problema invalido.~%"))))
+
+;;; Para iniciar automaticamente:
+;; (menu-principal)

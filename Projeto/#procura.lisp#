@@ -1,6 +1,6 @@
 ;;; procura.lisp
 ;;; Algoritmos de Procura e Estruturas de Dados
-;;; ImplementaÁ„o baseada nos Guiıes de LaboratÛrio 8 e 9
+;;; Implementa√ß√£o baseada nos Gui√µes de Laborat√≥rio 8 e 9
 
 ;;; ---------------------------------------------------------
 ;;; 1. TIPO ABSTRATO DE DADOS: NO (Conforme Lab 8)
@@ -8,23 +8,23 @@
 ;;; ---------------------------------------------------------
 
 (defun criar-no (estado &optional (g 0) (h 0) (pai nil))
-  "Construtor do nÛ: aceita estado, g, h e pai."
+  "Construtor do n√≥: aceita estado, g, h e pai."
   (list estado g h pai))
 
 (defun no-estado (no)
-  "Seletor: Retorna o estado do nÛ."
+  "Seletor: Retorna o estado do n√≥."
   (first no))
 
 (defun no-profundidade (no)
-  "Seletor: Retorna a profundidade (g) do nÛ."
+  "Seletor: Retorna a profundidade (g) do n√≥."
   (second no))
 
 (defun no-heuristica (no)
-  "Seletor: Retorna a heurÌstica (h) do nÛ."
+  "Seletor: Retorna a heur√≠stica (h) do n√≥."
   (third no))
 
 (defun no-pai (no)
-  "Seletor: Retorna o nÛ pai."
+  "Seletor: Retorna o n√≥ pai."
   (fourth no))
 
 (defun no-custo (no)
@@ -32,43 +32,43 @@
   (+ (no-profundidade no) (no-heuristica no)))
 
 ;;; ---------------------------------------------------------
-;;; 2. FUN«’ES AUXILIARES DE PROCURA (Lab 8)
+;;; 2. FUN√á√ïES AUXILIARES DE PROCURA (Lab 8)
 ;;; ---------------------------------------------------------
 
 (defun solucaop (no)
-  "Verifica se um nÛ È soluÁ„o (apenas 1 pino restante)."
+  "Verifica se um n√≥ √© solu√ß√£o (apenas 1 pino restante)."
   ;; Nota: conta-pinos deve estar definida em puzzle.lisp
   (= (contar-pinos (no-estado no)) 1))
 
 (defun ordenar-nos (lista-nos)
-  "Ordena uma lista de nÛs por ordem crescente de custo f(n)."
+  "Ordena uma lista de n√≥s por ordem crescente de custo f(n)."
   (sort lista-nos #'< :key #'no-custo))
 
 (defun colocar-sucessores-em-abertos (abertos sucessores)
-  "Junta sucessores ‡ lista de abertos e ordena-a (para o A*)."
+  "Junta sucessores √† lista de abertos e ordena-a (para o A*)."
   (ordenar-nos (append abertos sucessores)))
 
 ;;; ---------------------------------------------------------
-;;; 3. GERA«√O DE SUCESSORES
+;;; 3. GERA√á√ÉO DE SUCESSORES
 ;;; ---------------------------------------------------------
 
 (defun gerar-sucessores (no heuristica-fn)
-  "Gera a lista de nÛs sucessores a partir de um nÛ."
+  "Gera a lista de n√≥s sucessores a partir de um n√≥."
   (let ((estado (no-estado no))
         (g (no-profundidade no)))
     (gerar-sucessores-rec estado g heuristica-fn 1 1)))
 
 (defun gerar-sucessores-rec (tabuleiro g-pai heuristica-fn l c)
-  "FunÁ„o recursiva para percorrer o tabuleiro e gerar sucessores."
+  "Fun√ß√£o recursiva para percorrer o tabuleiro e gerar sucessores."
   (cond
     ((> l 7) nil) ;; Fim do tabuleiro
-    ((> c 7) (gerar-sucessores-rec tabuleiro g-pai heuristica-fn (1+ l) 1)) ;; PrÛxima linha
+    ((> c 7) (gerar-sucessores-rec tabuleiro g-pai heuristica-fn (1+ l) 1)) ;; Pr√≥xima linha
     (t
      (append (tentar-operadores l c tabuleiro g-pai heuristica-fn)
              (gerar-sucessores-rec tabuleiro g-pai heuristica-fn l (1+ c))))))
 
 (defun tentar-operadores (l c tab g-pai h-fn)
-  "Aplica todos os operadores numa posiÁ„o e cria os nÛs resultantes."
+  "Aplica todos os operadores numa posi√ß√£o e cria os n√≥s resultantes."
   (let ((ops (operadores))) ;; operadores definido em puzzle.lisp
     (mapcan (lambda (op)
               (let ((novo-tab (funcall op l c tab)))
@@ -76,27 +76,27 @@
                     (list (criar-no novo-tab 
                                     (1+ g-pai) 
                                     (if h-fn (funcall h-fn novo-tab) 0) 
-                                    nil)) ;; O pai ser· atribuÌdo na expans„o
+                                    nil)) ;; O pai ser√° atribu√≠do na expans√£o
                     nil)))
             ops)))
 
 ;;; ---------------------------------------------------------
-;;; 4. M…TRICAS DE DESEMPENHO (Conforme Lab 9)
+;;; 4. M√âTRICAS DE DESEMPENHO (Conforme Lab 9)
 ;;; ---------------------------------------------------------
 
 (defun penetrancia (L T-total)
-  "Calcula a penetr‚ncia P = L / T."
+  "Calcula a penetr√¢ncia P = L / T."
   (if (zerop T-total) 0 (float (/ L T-total))))
 
 (defun ramificacao-media (L T-total)
-  "Calcula o fator de ramificaÁ„o mÈdio (B*) usando o mÈtodo da bissecÁ„o."
-  ;; Resolve a equaÁ„o: B^L + B^(L-1) + ... + B + 1 = T
+  "Calcula o fator de ramifica√ß√£o m√©dio (B*) usando o m√©todo da bissec√ß√£o."
+  ;; Resolve a equa√ß√£o: B^L + B^(L-1) + ... + B + 1 = T
   (if (<= T-total L) 
       1.0
       (bisseccao L T-total 1.0 10.0 0.01)))
 
 (defun bisseccao (L T-alvo min max erro)
-  "MÈtodo numÈrico da bissecÁ„o para encontrar a base B."
+  "M√©todo num√©rico da bissec√ß√£o para encontrar a base B."
   (let* ((b (/ (+ min max) 2.0))
          (val (polinomio-b b L)))
     (cond ((< (abs (- val T-alvo)) erro) b)
@@ -104,14 +104,14 @@
           (t (bisseccao L T-alvo b max erro)))))
 
 (defun polinomio-b (b L)
-  "Calcula o somatÛrio da sÈrie geomÈtrica para a ·rvore."
+  "Calcula o somat√≥rio da s√©rie geom√©trica para a √°rvore."
   (if (= b 1) 
       (1+ L)
       (/ (- (expt b (1+ L)) 1) (- b 1))))
 
 ;;; ---------------------------------------------------------
 ;;; 5. ALGORITMOS DE PROCURA
-;;; Retorno: (nÛ-final nos-gerados nos-expandidos tempo-ms)
+;;; Retorno: (n√≥-final nos-gerados nos-expandidos tempo-ms)
 ;;; ---------------------------------------------------------
 
 ;;; BFS - Procura em Largura (FIFO)
@@ -170,7 +170,7 @@
                      (if (solucaop atual) 
                          (list atual gerados expandidos (- (get-internal-run-time) inicio))
                          
-                         ;; OtimizaÁ„o Lab 8: Verificar se existe em fechados com menor custo
+                         ;; Verificar se existe em fechados com menor custo
                          (if (and (member (no-estado atual) fechados :test #'equal)
                                   (<= (no-custo (find (no-estado atual) fechados :key #'no-estado :test #'equal)) 
                                       (no-custo atual)))
@@ -179,7 +179,7 @@
                              (progn
                                (incf expandidos)
                                (let ((sucessores (gerar-sucessores atual h-fn)))
-                                 ;; Atribuir pai e calcular heurÌstica
+                                 ;; Atribuir pai e calcular heur√≠stica
                                  (setf sucessores (mapcar (lambda (s) 
                                                             (criar-no (no-estado s) 
                                                                       (no-profundidade s) 
@@ -189,5 +189,5 @@
                                  (incf gerados (length sucessores))
                                  ;; Ordenar abertos (Lab 8)
                                  (a-star-rec (colocar-sucessores-em-abertos (cdr abertos) sucessores)
-                                             (cons (no-estado atual) fechados)))))))))))
-      (a-star-rec (list no-inicial) nil)))
+                                             (cons (no-estado atual) fechados)))))))))) ;; Parenteses corrigidos aqui
+      (a-star-rec (list no-inicial) nil))))
