@@ -9,7 +9,6 @@
 ;; Antes de comecar utilizar este comando para selecionar o diretorio do projeto
 ;; (hcl:change-directory "C:\\Users\\bruno\\Desktop\\ProjetoIA25-26\\Projeto")
 ;; (hcl:change-directory "C:\\Users\\bruno\\OneDrive\\Ambiente de Trabalho\\GitHub\\ProjetoIA25-26\\Projeto")
-;; (load "projeto.lisp")
 
 
 ;; Carregar e Compilar Ficheiros

@@ -1,4 +1,4 @@
-# Manual Técnico - Projeto Jogo do Solitário de Pinos
+# Manual Técnico - Projeto Jogo do Solitário
 
 ## Inteligência Artificial 2025/26
 Prof. Joaquim Filipe
@@ -16,7 +16,7 @@ Data: 12 de dezembro de 2025
 
 ## 1. Introdução
 
-No âmbito da unidade curricular de Inteligência Artificial, este projeto implemente e compara algoritmos de procura (BFS, DFS, A*) aplicados à resolução do problema do **Jogo do Solitário de Pinos** (Peg Solitaire). O objetivo do jogo é reduzir o número de pinos no tabuleiro para um, através de movimentos de salto.
+No âmbito da unidade curricular de Inteligência Artificial, este projeto implemente e compara algoritmos de procura (BFS, DFS, A*) aplicados à resolução do problema do **Jogo do Solitário** (Peg Solitaire). O objetivo do jogo é reduzir o número de pinos no tabuleiro para um, através de movimentos de salto.
 
 Este manual técnico descreve detalhadamente a arquitetura do sistema, as entidades, as funções implementadas e os algoritmos de procura utilizados, todos desenvolvimento em Common LISP.
 

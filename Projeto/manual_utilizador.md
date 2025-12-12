@@ -62,8 +62,10 @@ Para iniciar o sistema, siga os passos abaixo no LispWorks:
 3.  **Carregar o Programa:**
     Compile e carregue o buffer do ficheiro `projeto.lisp`. O código contém instruções para carregar automaticamente os módulos dependentes:
     ```lisp
-    (load "puzzle.lisp")
-    (load "procura.lisp")
+    (compile-file "puzzle.lisp")
+    (load "puzzle")
+    (compile-file "procura.lisp")
+    (load "procura")
     ```
 
 4.  **Iniciar a Interface:**
