@@ -95,17 +95,17 @@
       (ler-ficheiro "problemas.dat"))
  (loop
   (format t "~%  ================================================~%")
-  (format t "  =  PROJETO SOLITÁRIO - INTELIGÊNCIA ARTIFICIAL =    ~%")
+  (format t "  =  PROJETO SOLITï¿½RIO - INTELIGï¿½NCIA ARTIFICIAL =    ~%")
   (format t "  ================================================~%")
-  (format t "~%  Escolha uma opção:")
+  (format t "~%  Escolha uma opï¿½ï¿½o:")
   (format t "~% 1. Resolver um problema")
   (format t "~% 2. Sair")
-  (format t "~% Opção > ")
+  (format t "~% Opï¿½ï¿½o > ")
   (let ((opcao (read)))
     (cond
      ((= opcao 1) (resolver-problema))
      ((= opcao 2) (format t "~% A sair...") (return))
-     (t (format t "~% Opção inválida! Tente novamente."))))))
+     (t (format t "~% Opï¿½ï¿½o invï¿½lida! Tente novamente."))))))
 
 (defun resolver-problema ()
   (format t "~%Escolha o numero do problema (1 a ~d): " (length *lista-problemas*))

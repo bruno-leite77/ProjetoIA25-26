@@ -142,3 +142,115 @@
   "Heuristica Extra: Numero de Pinos - 1.
    Estima a distancia exata ao objetivo (sem contar bloqueios)."
   (1- (contar-pinos estado)))
+
+;;; ---------------------------------------------------------
+;;; ATUALIZAÇÕES FASE 2
+;;; ---------------------------------------------------------
+
+;; Determinar o adversário (se sou 1, o outro é 2 e vice-versa)
+(defun adversario (jogador)
+  (if (= jogador 1) 2 1))
+
+;;; NOVOS OPERADORES SIMPLES (d, e, c, b)
+;;; Movem apenas 1 casa para o lado, se estiver vazia.
+
+(defun operador-d (l c tab jogador)
+  "Direita: (l, c) move para (l, c+1)"
+  (if (<= (1+ c) 7)
+      (let ((orig (celula l c tab))
+            (dest (celula l (1+ c) tab)))
+        (if (and (eql orig jogador) (eql dest 0))
+            ;; Usa a funcao substituir existente
+            (substituir l (1+ c) (substituir l c tab 0) jogador)
+            nil))
+      nil))
+
+(defun operador-e (l c tab jogador)
+  "Esquerda: (l, c) move para (l, c-1)"
+  (if (>= (1- c) 1)
+      (let ((orig (celula l c tab))
+            (dest (celula l (1- c) tab)))
+        (if (and (eql orig jogador) (eql dest 0))
+            (substituir l (1- c) (substituir l c tab 0) jogador)
+            nil))
+      nil))
+
+(defun operador-c (l c tab jogador)
+  "Cima: (l, c) move para (l-1, c)"
+  (if (>= (1- l) 1)
+      (let ((orig (celula l c tab))
+            (dest (celula (1- l) c tab)))
+        (if (and (eql orig jogador) (eql dest 0))
+            (substituir (1- l) c (substituir l c tab 0) jogador)
+            nil))
+      nil))
+
+(defun operador-b (l c tab jogador)
+  "Baixo: (l, c) move para (l+1, c)"
+  (if (<= (1+ l) 7)
+      (let ((orig (celula l c tab))
+            (dest (celula (1+ l) c tab)))
+        (if (and (eql orig jogador) (eql dest 0))
+            (substituir (1+ l) c (substituir l c tab 0) jogador)
+            nil))
+      nil))
+
+;;; OPERADORES DE CAPTURA ATUALIZADOS PARA 2 JOGADORES
+;;; Devem verificar se a peça "meio" é do (adversario jogador)
+
+(defun operador-cd-2 (l c tab jogador)
+  "Captura Direita: salta sobre ADVERSARIO"
+  (if (<= (+ c 2) 7)
+      (let ((orig (celula l c tab))
+            (meio (celula l (1+ c) tab))
+            (dest (celula l (+ c 2) tab)))
+        ;; Verifica se meio é do adversário
+        (if (and (eql orig jogador) 
+                 (eql meio (adversario jogador)) 
+                 (eql dest 0))
+            (aplicar-movimento l c tab 0 2)
+            nil))
+      nil))
+
+(defun operador-ce-2 (l c tab jogador)
+  "Captura Esquerda: salta sobre ADVERSARIO"
+  (if (>= (- c 2) 1)
+      (let ((orig (celula l c tab))
+            (meio (celula l (1- c) tab))
+            (dest (celula l (- c 2) tab)))
+        ;; Verifica se meio é do adversário
+        (if (and (eql orig jogador) 
+                 (eql meio (adversario jogador)) 
+                 (eql dest 0))
+            (aplicar-movimento l c tab 0 -2)
+            nil))
+      nil))
+
+(defun operador-cc-2 (l c tab jogador)
+  "Captura Cima: salta sobre ADVERSARIO"
+  (if (>= (- l 2) 1)
+      (let ((orig (celula l c tab))
+            (meio (celula (1- l) c tab))
+            (dest (celula (- l 2) c tab)))
+        ;; Verifica se meio é do adversário
+        (if (and (eql orig jogador) 
+                 (eql meio (adversario jogador)) 
+                 (eql dest 0))
+            (aplicar-movimento l c tab -2 0)
+            nil))
+      nil))
+
+(defun operador-cb-2 (l c tab jogador)
+  "Captura Baixo: salta sobre ADVERSARIO"
+  (if (<= (+ l 2) 7)
+      (let ((orig (celula l c tab))
+            (meio (celula (1+ l) c tab))
+            (dest (celula (+ l 2) c tab)))
+        ;; Verifica se meio é do adversário
+        (if (and (eql orig jogador) 
+                 (eql meio (adversario jogador)) 
+                 (eql dest 0))
+            (aplicar-movimento l c tab 2 0)
+            nil))
+      nil))
+
