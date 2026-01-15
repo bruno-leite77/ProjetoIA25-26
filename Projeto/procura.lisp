@@ -1,92 +1,61 @@
 ;;; procura.lisp
-;;; Algoritmos de Procura e Estruturas de Dados
-;;; Implementacao baseada nos Guioes de Laboratorio 8 e 9
+;;; FASE 1: Algoritmos de Procura (BFS, DFS, A*) - OTIMIZADO
 
-;;; ---------------------------------------------------------
-;;; 1. TIPO ABSTRATO DE DADOS: NO (Conforme Lab 8)
-;;; Estrutura: (estado profundidade heuristica pai)
-;;; ---------------------------------------------------------
-
-(defun criar-no (estado &optional (g 0) (h 0) (pai nil))
-  "Construtor do no: aceita estado, g, h e pai."
-  (list estado g h pai))
-
+;;; --- TAD NO ---
+(defun criar-no (estado &optional (g 0) (h 0) (pai nil)) (list estado g h pai))
 (defun no-estado (no) (first no))
-(defun no-profundidade (no) (second no)) ; g(n)
-(defun no-g (no) (second no))            ; Alias
-(defun no-heuristica (no) (third no))    ; h(n)
+(defun no-g (no) (second no))
+(defun no-heuristica (no) (third no))
 (defun no-pai (no) (fourth no))
-(defun no-custo (no) (+ (no-g no) (no-heuristica no))) ; f(n)
+(defun no-custo (no) (+ (no-g no) (no-heuristica no)))
 
-;;; ---------------------------------------------------------
-;;; 2. FUNCOES AUXILIARES E GERACAO
-;;; ---------------------------------------------------------
+(defun solucaop (no) (= (contar-pinos (no-estado no)) 1))
+(defun ordenar-nos (lista) (sort (copy-list lista) #'< :key #'no-custo))
+(defun colocar-sucessores-em-abertos (abertos sucessores) (ordenar-nos (append abertos sucessores)))
 
-(defun solucaop (no)
-  "Verifica se um no e solução (apenas 1 pino restante)."
-  (= (contar-pinos (no-estado no)) 1))
-
-(defun ordenar-nos (lista-nos)
-  "Ordena uma lista de nos por ordem crescente de custo f(n)."
-  (sort lista-nos #'< :key #'no-custo))
-
-(defun colocar-sucessores-em-abertos (abertos sucessores)
-  "Junta sucessores a lista de abertos e ordena-a (para o A*)."
-  (ordenar-nos (append abertos sucessores)))
-
-(defun gerar-sucessores (no heuristica-fn)
-  "Gera a lista de nos sucessores a partir de um no."
+;;; --- GERACAO SUCESSORES (Otimizada com MAPCAN) ---
+(defun gerar-sucessores (no h-fn)
   (let ((estado (no-estado no)) (g (no-g no)))
-    (gerar-sucessores-rec estado g heuristica-fn 1 1)))
-
-(defun gerar-sucessores-rec (tab g h-fn l c)
-  (cond ((> l 7) nil)
-        ((> c 7) (gerar-sucessores-rec tab g h-fn (1+ l) 1))
-        (t (append (tentar-ops l c tab g h-fn)
-                   (gerar-sucessores-rec tab g h-fn l (1+ c))))))
+    ;; OTIMIZACAO: mapcan evita recursao profunda na pilha
+    (mapcan (lambda (l)
+              (mapcan (lambda (c)
+                        (tentar-ops l c estado g h-fn))
+                      '(1 2 3 4 5 6 7)))
+            '(1 2 3 4 5 6 7))))
 
 (defun tentar-ops (l c tab g h-fn)
-  (let ((ops (operadores)))
+  ;; Chama os operadores da Fase 1 (definidos no puzzle.lisp)
+  (let ((ops (operadores))) 
     (mapcan (lambda (op)
               (let ((nt (funcall op l c tab)))
-                (if nt (list (criar-no nt (1+ g) 
-                                       (if h-fn (funcall h-fn nt) 0) 
-                                       nil)) nil)))
+                (if nt (list (criar-no nt (1+ g) (if h-fn (funcall h-fn nt) 0) nil)) nil)))
             ops)))
 
-;;; ---------------------------------------------------------
-;;; 3. METRICAS DE DESEMPENHO (Conforme Lab 9)
-;;; ---------------------------------------------------------
-
-(defun penetrancia (L T-total)
-  (if (zerop T-total) 0 (float (/ L T-total))))
-
-(defun ramificacao-media (L T-total)
-  (if (<= T-total L) 1.0 (bisseccao L T-total 1.0 10.0 0.01)))
-
+;;; --- METRICAS ---
+(defun penetrancia (L T-total) (if (zerop T-total) 0 (float (/ L T-total))))
+(defun polinomio-b (b L) (if (= b 1) (1+ L) (/ (- (expt b (1+ L)) 1) (- b 1))))
 (defun bisseccao (L T-alvo min max erro)
   (let* ((b (/ (+ min max) 2.0)) (val (polinomio-b b L)))
     (cond ((< (abs (- val T-alvo)) erro) b)
           ((> val T-alvo) (bisseccao L T-alvo min b erro))
           (t (bisseccao L T-alvo b max erro)))))
+(defun ramificacao-media (L T-total) (if (<= T-total L) 1.0 (bisseccao L T-total 1.0 10.0 0.01)))
 
-(defun polinomio-b (b L)
-  (if (= b 1) (1+ L) (/ (- (expt b (1+ L)) 1) (- b 1))))
-
-;;; ---------------------------------------------------------
-;;; 4. ALGORITMOS DE PROCURA (Retorno: no, gerados, expandidos, tempo)
-;;; ---------------------------------------------------------
+;;; --- ALGORITMOS (Com declaracoes de otimizacao OBRIGATORIAS) ---
 
 (defun bfs (no-inicial)
   (let ((inicio (get-internal-run-time)) (ger 1) (exp 0))
     (labels ((bfs-rec (abertos fechados)
+               ;; OTIMIZACAO: Permite recursao de cauda sem estourar a pilha
+               (declare (optimize (speed 3) (safety 0) (debug 0)))
                (if (null abertos) nil
                    (let ((atual (car abertos)))
                      (if (solucaop atual)
                          (list atual ger exp (- (get-internal-run-time) inicio))
                          (if (member (no-estado atual) fechados :test #'equal)
                              (bfs-rec (cdr abertos) fechados)
-                             (progn (incf exp)
+                             (progn 
+                               (incf exp)
                                (let ((suc (gerar-sucessores atual nil)))
                                  (setf suc (mapcar (lambda (s) (criar-no (no-estado s) (no-g s) 0 atual)) suc))
                                  (incf ger (length suc))
@@ -96,6 +65,7 @@
 (defun dfs (no-inicial prof-max)
   (let ((inicio (get-internal-run-time)) (ger 1) (exp 0))
     (labels ((dfs-rec (abertos fechados)
+               (declare (optimize (speed 3) (safety 0) (debug 0)))
                (if (null abertos) nil
                    (let ((atual (car abertos)))
                      (cond ((solucaop atual) 
@@ -112,6 +82,7 @@
 (defun a-star (no-inicial h-fn)
   (let ((inicio (get-internal-run-time)) (ger 1) (exp 0))
     (labels ((a-star-rec (abertos fechados)
+               (declare (optimize (speed 3) (safety 0) (debug 0)))
                (if (null abertos) nil
                    (let ((atual (car abertos)))
                      (if (solucaop atual) 
