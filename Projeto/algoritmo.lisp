@@ -1,92 +1,28 @@
 ;;; algoritmo.lisp
-;;; Implementacao generica do Negamax com cortes Alfa-Beta
-;;; Sem variaveis globais, setf ou ciclos imperativos.
+;;; Algoritmo Negamax com cortes Alfa-Beta (Fase 2)
+;;; Codigo desenvolvido com auxilio de IA (Gemini).
 
-(defun negamax-alfa-beta (estado profundidade alfa beta jogador funcao-sucessores funcao-avaliacao tempo-limite inicio)
-  "Algoritmo Negamax com cortes Alfa-Beta. Retorna: (valor melhor-jogada)"
-  
-  ;; 1. Verificar Tempo Limite
+(defun negamax (estado prof alfa beta jogador f-suc f-aval t-limite inicio)
+  "Retorna (valor melhor-jogada nos-analisados cortes-alfa cortes-beta)"
   (cond 
-    ((>= (- (get-internal-real-time) inicio) tempo-limite)
-     (list (funcall funcao-avaliacao estado jogador) nil))
-    
-    ;; 2. Verificar Profundidade Zero
-    ((zerop profundidade)
-     (list (* (funcall funcao-avaliacao estado jogador) 1) nil)) 
-    
+    ((or (zerop prof) (>= (- (get-internal-real-time) inicio) t-limite))
+     (list (funcall f-aval estado jogador) nil 1 0 0))
     (t
-     (let ((sucessores (funcall funcao-sucessores estado jogador)))
+     (let ((sucessores (funcall f-suc estado jogador)))
        (if (null sucessores)
-           ;; Estado terminal (sem jogadas)
-           (list (funcall funcao-avaliacao estado jogador) nil)
-           
-           ;; 3. Processar sucessores recursivamente
-           (processar-sucessores sucessores 
-                                 profundidade 
-                                 alfa 
-                                 beta 
-                                 jogador 
-                                 funcao-sucessores 
-                                 funcao-avaliacao 
-                                 tempo-limite 
-                                 inicio 
-                                 -9999999  ; Melhor valor inicial (infinito negativo)
-                                 nil)))))) ; Melhor jogada inicial
+           (list (funcall f-aval estado jogador) nil 1 0 0)
+           (processar-negamax sucessores prof alfa beta jogador f-suc f-aval t-limite inicio -999999 nil 0 0 0))))))
 
-(defun processar-sucessores (lista-sucessores profundidade alfa beta jogador f-suc f-aval t-limite inicio melhor-valor melhor-jogada)
-  "Funcao auxiliar recursiva para iterar sobre a lista de sucessores."
-  
-  (if (null lista-sucessores)
-      (list melhor-valor melhor-jogada)
-      
-      (let* ((sucessor-atual (car lista-sucessores))
-             (jogada (car sucessor-atual))      
-             (novo-estado (cdr sucessor-atual))
-             
-             ;; Chamada recursiva Negamax (troca de sinal e limites)
-             (resultado-filho (negamax-alfa-beta novo-estado 
-                                                 (1- profundidade) 
-                                                 (- beta) 
-                                                 (- alfa) 
-                                                 (adversario jogador) 
-                                                 f-suc 
-                                                 f-aval 
-                                                 t-limite 
-                                                 inicio))
-             (valor-atual (- (first resultado-filho))))
-        
-        ;; Logica de Maximizacao e Corte
-        (if (> valor-atual melhor-valor)
-            (let ((novo-alfa (max alfa valor-atual)))
-              (if (>= novo-alfa beta)
-                  (list valor-atual jogada) ;; Corte Beta
-                  
-                  ;; Continua com novo melhor valor
-                  (processar-sucessores (cdr lista-sucessores) 
-                                        profundidade 
-                                        novo-alfa 
-                                        beta 
-                                        jogador 
-                                        f-suc 
-                                        f-aval 
-                                        t-limite 
-                                        inicio 
-                                        valor-atual 
-                                        jogada)))
-            
-            ;; O valor nao melhorou, continua
-            (processar-sucessores (cdr lista-sucessores) 
-                                  profundidade 
-                                  alfa 
-                                  beta 
-                                  jogador 
-                                  f-suc 
-                                  f-aval 
-                                  t-limite 
-                                  inicio 
-                                  melhor-valor 
-                                  melhor-jogada)))))
-
-(defun adversario (jogador)
-  "Retorna o ID do adversário (1 -> 2, 2 -> 1)"
-  (if (= jogador 1) 2 1))
+(defun processar-negamax (sucs prof alfa beta jog f-suc f-aval t-limite ini melhor-v melhor-j total-nos c-alfa c-beta)
+  (if (null sucs)
+      (list melhor-v melhor-j total-nos c-alfa c-beta)
+      (let* ((atual (car sucs))
+             (res-filho (negamax (cdr atual) (1- prof) (- beta) (- alfa) (if (= jog 1) 2 1) f-suc f-aval t-limite ini))
+             (v (- (first res-filho)))
+             (nos-filho (third res-filho))
+             (novo-total (+ total-nos nos-filho)))
+        (cond 
+          ((>= v beta) (list v (car atual) novo-total c-alfa (1+ c-beta)))
+          ((> v melhor-v) 
+           (processar-negamax (cdr sucs) prof (max alfa v) beta jog f-suc f-aval t-limite ini v (car atual) novo-total (if (> v alfa) (1+ c-alfa) c-alfa) c-beta))
+          (t (processar-negamax (cdr sucs) prof alfa beta jog f-suc f-aval t-limite ini melhor-v melhor-j novo-total c-alfa c-beta))))))

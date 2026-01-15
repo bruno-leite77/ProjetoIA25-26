@@ -1,256 +1,53 @@
 ;;; puzzle.lisp
-;;; Modulo do Dominio: Tabuleiro, Pecas, Operadores e Heuristicas
-;;; Implementacao conforme Ficha de Laboratorio 7 e Projeto
+;;; Dominio do jogo Solitario 2 (Fase 2)
+;;; Codigo desenvolvido com auxilio de IA (Gemini).
 
-;;; ---------------------------------------------------------
-;;; 1. SELETORES (Conforme Lab 7)
-;;; ---------------------------------------------------------
+(defun celula (l c tab)
+  (if (or (< l 1) (> l 7) (< c 1) (> c 7)) nil (nth (1- c) (nth (1- l) tab))))
 
-(defun linha (l tabuleiro)
-  "Retorna a linha l do tabuleiro (1-indexada)."
-  (nth (1- l) tabuleiro))
+(defun substituir (l c tab v)
+  (cond ((null tab) nil)
+        ((= l 1) (cons (substituir-posicao c (car tab) v) (cdr tab)))
+        (t (cons (car tab) (substituir (1- l) c (cdr tab) v)))))
 
-(defun coluna (c tabuleiro)
-  "Retorna uma lista com a coluna c do tabuleiro."
-  (mapcar (lambda (lin) (nth (1- c) lin)) tabuleiro))
+(defun substituir-posicao (i lista v)
+  (cond ((null lista) nil) ((= i 1) (cons v (cdr lista))) (t (cons (car lista) (substituir-posicao (1- i) (cdr lista) v)))))
 
-(defun celula (l c tabuleiro)
-  "Retorna o valor na linha l e coluna c (1-indexado). Retorna nil se fora dos limites."
-  (if (or (< l 1) (> l 7) (< c 1) (> c 7))
-      nil
-      (nth (1- c) (nth (1- l) tabuleiro))))
+(defun gerar-todos-sucessores (tab j)
+  (gerar-sucessores-rec tab j 1 1))
 
-;;; ---------------------------------------------------------
-;;; 2. FUNCOES AUXILIARES E MODIFICADORES (Conforme Lab 7)
-;;; ---------------------------------------------------------
+(defun gerar-sucessores-rec (tab j l c)
+  "Corrigido: Aceita exatamente TAB J L C para evitar erro de definicao."
+  (cond ((> l 7) nil)
+        ((> c 7) (gerar-sucessores-rec tab j (1+ l) 1))
+        (t (append (tentar-movimentos l c tab j) (gerar-sucessores-rec tab j l (1+ c))))))
 
-(defun celula-validap (l c tabuleiro)
-  "Predicado: Verifica se a celula e jogavel (valor 0 ou 1)."
-  (let ((val (celula l c tabuleiro)))
-    (or (eql val 0) (eql val 1))))
+(defun tentar-movimentos (l c tab j)
+  (let ((ops '((d 0 1 nil) (e 0 -1 nil) (c -1 0 nil) (b 1 0 nil)
+               (cd 0 2 t) (ce 0 -2 t) (cc -2 0 t) (cb 2 0 t))))
+    (mapcan (lambda (o)
+              (let ((res (validar-e-aplicar l c tab j (second o) (third o) (fourth o))))
+                (if res (list (cons (list (car o) l c) res)) nil)))
+            ops)))
 
-(defun substituir-posicao (indice lista novo-valor)
-  "Substitui o elemento no indice i de uma lista (1-indexado)."
-  (if (null lista)
-      nil
-      (if (= indice 1)
-          (cons novo-valor (cdr lista))
-          (cons (car lista) (substituir-posicao (1- indice) (cdr lista) novo-valor)))))
+(defun validar-e-aplicar (l c tab j dl dc cap)
+  (let ((nl (+ l dl)) (nc (+ c dc)) (adv (if (= j 1) 2 1)))
+    (if (and (eql (celula l c tab) j) (eql (celula nl nc tab) 0))
+        (if cap
+            (let ((ml (+ l (/ dl 2))) (mc (+ c (/ dc 2))))
+              (if (eql (celula ml mc tab) adv)
+                  (substituir nl nc (substituir ml mc (substituir l c tab 0) 0) j) nil))
+            (substituir nl nc (substituir l c tab 0) j))
+        nil)))
 
-(defun substituir (l c tabuleiro novo-valor)
-  "Retorna um novo tabuleiro com a celula (l,c) alterada."
-  (if (= l 1)
-      (cons (substituir-posicao c (car tabuleiro) novo-valor) (cdr tabuleiro))
-      (cons (car tabuleiro) (substituir (1- l) c (cdr tabuleiro) novo-valor))))
+(defun avaliar-estado (tab j)
+  "Garante retorno numerico para evitar erro (+ NIL NIL)."
+  (let ((eu (or (contar-pecas tab j) 0)) 
+        (ele (or (contar-pecas tab (if (= j 1) 2 1)) 0)))
+    (+ (* 100 (- eu ele)) (or (bonus-alvo tab j) 0))))
 
-(defun aplicar-movimento (l c tabuleiro dl dc)
-  "Aplica a logica de salto: Origem(1)->0, Meio(1)->0, Destino(0)->1."
-  (let* ((l-dest (+ l dl))
-         (c-dest (+ c dc))
-         (l-meio (+ l (/ dl 2)))
-         (c-meio (+ c (/ dc 2))))
-    (substituir l-dest c-dest
-                (substituir l-meio c-meio
-                            (substituir l c tabuleiro 0)
-                            0)
-                1)))
+(defun contar-pecas (tab j) (reduce #'+ (mapcar (lambda (lin) (count j lin)) tab)))
 
-;;; ---------------------------------------------------------
-;;; 3. OPERADORES (Conforme Lab 7 - Estilo Funcional)
-;;; ---------------------------------------------------------
-
-(defun operador-cd (l c tab)
-  "Captura Direita: (l,c) salta para (l,c+2)"
-  (if (<= (+ c 2) 7)
-      (let ((orig (celula l c tab))
-            (meio (celula l (1+ c) tab))
-            (dest (celula l (+ c 2) tab)))
-        (if (and (eql orig 1) (eql meio 1) (eql dest 0))
-            (aplicar-movimento l c tab 0 2)
-            nil))
-      nil))
-
-(defun operador-ce (l c tab)
-  "Captura Esquerda: (l,c) salta para (l,c-2)"
-  (if (>= (- c 2) 1)
-      (let ((orig (celula l c tab))
-            (meio (celula l (1- c) tab))
-            (dest (celula l (- c 2) tab)))
-        (if (and (eql orig 1) (eql meio 1) (eql dest 0))
-            (aplicar-movimento l c tab 0 -2)
-            nil))
-      nil))
-
-(defun operador-cc (l c tab)
-  "Captura Cima: (l,c) salta para (l-2,c)"
-  (if (>= (- l 2) 1)
-      (let ((orig (celula l c tab))
-            (meio (celula (1- l) c tab))
-            (dest (celula (- l 2) c tab)))
-        (if (and (eql orig 1) (eql meio 1) (eql dest 0))
-            (aplicar-movimento l c tab -2 0)
-            nil))
-      nil))
-
-(defun operador-cb (l c tab)
-  "Captura Baixo: (l,c) salta para (l+2,c)"
-  (if (<= (+ l 2) 7)
-      (let ((orig (celula l c tab))
-            (meio (celula (1+ l) c tab))
-            (dest (celula (+ l 2) c tab)))
-        (if (and (eql orig 1) (eql meio 1) (eql dest 0))
-            (aplicar-movimento l c tab 2 0)
-            nil))
-      nil))
-
-(defun operadores ()
-  "Retorna a lista de funcoes operadores."
-  (list #'operador-cd #'operador-ce #'operador-cc #'operador-cb))
-
-;;; ---------------------------------------------------------
-;;; 4. HEURISTICAS (Conforme Projeto)
-;;; ---------------------------------------------------------
-
-(defun contar-pinos (tabuleiro)
-  "Conta o numero total de pinos (1s) no tabuleiro."
-  (if (null tabuleiro)
-      0
-      (+ (count 1 (car tabuleiro)) 
-         (contar-pinos (cdr tabuleiro)))))
-
-(defun peca-movel-p (l c tab)
-  "Verifica se a peca em (l,c) tem pelo menos um movimento."
-  (or (operador-cd l c tab)
-      (operador-ce l c tab)
-      (operador-cc l c tab)
-      (operador-cb l c tab)))
-
-(defun contar-pecas-moveis (tab l c)
-  "o(x): Conta quantas pecas conseguem mover-se."
-  (cond ((> l 7) 0)
-        ((> c 7) (contar-pecas-moveis tab (1+ l) 1))
-        (t (+ (if (peca-movel-p l c tab) 1 0)
-              (contar-pecas-moveis tab l (1+ c))))))
-
-(defun h1-base (estado)
-  "Heuristica Base: h(x) = 1 / (o(x) + 1).
-   Privilegia tabuleiros com mais pecas moveis."
-  (let ((ox (contar-pecas-moveis estado 1 1)))
-    (/ 1.0 (1+ ox))))
-
-(defun h2-extra (estado)
-  "Heuristica Extra: Numero de Pinos - 1.
-   Estima a distancia exata ao objetivo (sem contar bloqueios)."
-  (1- (contar-pinos estado)))
-
-;;; ---------------------------------------------------------
-;;; ATUALIZAÇÕES FASE 2
-;;; ---------------------------------------------------------
-
-;; Determinar o adversário (se sou 1, o outro é 2 e vice-versa)
-(defun adversario (jogador)
-  (if (= jogador 1) 2 1))
-
-;;; NOVOS OPERADORES SIMPLES (d, e, c, b)
-;;; Movem apenas 1 casa para o lado, se estiver vazia.
-
-(defun operador-d (l c tab jogador)
-  "Direita: (l, c) move para (l, c+1)"
-  (if (<= (1+ c) 7)
-      (let ((orig (celula l c tab))
-            (dest (celula l (1+ c) tab)))
-        (if (and (eql orig jogador) (eql dest 0))
-            ;; Usa a funcao substituir existente
-            (substituir l (1+ c) (substituir l c tab 0) jogador)
-            nil))
-      nil))
-
-(defun operador-e (l c tab jogador)
-  "Esquerda: (l, c) move para (l, c-1)"
-  (if (>= (1- c) 1)
-      (let ((orig (celula l c tab))
-            (dest (celula l (1- c) tab)))
-        (if (and (eql orig jogador) (eql dest 0))
-            (substituir l (1- c) (substituir l c tab 0) jogador)
-            nil))
-      nil))
-
-(defun operador-c (l c tab jogador)
-  "Cima: (l, c) move para (l-1, c)"
-  (if (>= (1- l) 1)
-      (let ((orig (celula l c tab))
-            (dest (celula (1- l) c tab)))
-        (if (and (eql orig jogador) (eql dest 0))
-            (substituir (1- l) c (substituir l c tab 0) jogador)
-            nil))
-      nil))
-
-(defun operador-b (l c tab jogador)
-  "Baixo: (l, c) move para (l+1, c)"
-  (if (<= (1+ l) 7)
-      (let ((orig (celula l c tab))
-            (dest (celula (1+ l) c tab)))
-        (if (and (eql orig jogador) (eql dest 0))
-            (substituir (1+ l) c (substituir l c tab 0) jogador)
-            nil))
-      nil))
-
-;;; OPERADORES DE CAPTURA ATUALIZADOS PARA 2 JOGADORES
-;;; Devem verificar se a peça "meio" é do (adversario jogador)
-
-(defun operador-cd-2 (l c tab jogador)
-  "Captura Direita: salta sobre ADVERSARIO"
-  (if (<= (+ c 2) 7)
-      (let ((orig (celula l c tab))
-            (meio (celula l (1+ c) tab))
-            (dest (celula l (+ c 2) tab)))
-        ;; Verifica se meio é do adversário
-        (if (and (eql orig jogador) 
-                 (eql meio (adversario jogador)) 
-                 (eql dest 0))
-            (aplicar-movimento l c tab 0 2)
-            nil))
-      nil))
-
-(defun operador-ce-2 (l c tab jogador)
-  "Captura Esquerda: salta sobre ADVERSARIO"
-  (if (>= (- c 2) 1)
-      (let ((orig (celula l c tab))
-            (meio (celula l (1- c) tab))
-            (dest (celula l (- c 2) tab)))
-        ;; Verifica se meio é do adversário
-        (if (and (eql orig jogador) 
-                 (eql meio (adversario jogador)) 
-                 (eql dest 0))
-            (aplicar-movimento l c tab 0 -2)
-            nil))
-      nil))
-
-(defun operador-cc-2 (l c tab jogador)
-  "Captura Cima: salta sobre ADVERSARIO"
-  (if (>= (- l 2) 1)
-      (let ((orig (celula l c tab))
-            (meio (celula (1- l) c tab))
-            (dest (celula (- l 2) c tab)))
-        ;; Verifica se meio é do adversário
-        (if (and (eql orig jogador) 
-                 (eql meio (adversario jogador)) 
-                 (eql dest 0))
-            (aplicar-movimento l c tab -2 0)
-            nil))
-      nil))
-
-(defun operador-cb-2 (l c tab jogador)
-  "Captura Baixo: salta sobre ADVERSARIO"
-  (if (<= (+ l 2) 7)
-      (let ((orig (celula l c tab))
-            (meio (celula (1+ l) c tab))
-            (dest (celula (+ l 2) c tab)))
-        ;; Verifica se meio é do adversário
-        (if (and (eql orig jogador) 
-                 (eql meio (adversario jogador)) 
-                 (eql dest 0))
-            (aplicar-movimento l c tab 2 0)
-            nil))
-      nil))
-
+(defun bonus-alvo (tab j)
+  (let ((alvos (if (= j 1) '((6 3) (6 4) (6 5) (7 3) (7 4) (7 5)) '((1 3) (1 4) (1 5) (2 3) (2 4) (2 5)))))
+    (if (some (lambda (a) (eql (celula (first a) (second a) tab) j)) alvos) 5000 0)))
