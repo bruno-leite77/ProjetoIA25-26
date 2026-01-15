@@ -86,3 +86,7 @@
                                   inicio 
                                   melhor-valor 
                                   melhor-jogada)))))
+
+(defun adversario (jogador)
+  "Retorna o ID do adversário (1 -> 2, 2 -> 1)"
+  (if (= jogador 1) 2 1))
