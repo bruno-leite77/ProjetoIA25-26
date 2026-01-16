@@ -1,5 +1,6 @@
-;;; puzzle.lisp - Dominio Solitario 2 - OTIMIZADO
-;;; Codigo gerado automaticamente conforme normas de programacao funcional.
+;;; puzzle.lisp - Dominio Solitario 2 (Versao Final Otimizada)
+
+;;; --- SELETORES E MODIFICADORES ---
 
 (defun linha (l tabuleiro) (nth (1- l) tabuleiro))
 
@@ -60,17 +61,46 @@
                     nil)))
             ops)))
 
-;; --- VITORIA ---
-(defun vitoria-p (tab jog)
-  (let ((alvos (if (= jog 1) '((6 3) (6 4) (6 5) (7 3) (7 4) (7 5)) '((1 3) (1 4) (1 5) (2 3) (2 4) (2 5)))))
-    (some (lambda (a) (eql (celula (first a) (second a) tab) jog)) alvos)))
+;;; --- HEURISTICAS E FUNCOES AUXILIARES ---
 
-;;; --- AVALIACAO ---
+(defun contar-pinos (tab) 
+  (if (null tab) 0 (+ (count 1 (car tab)) (contar-pinos (cdr tab)))))
+
+(defun h1-base (est) 
+  (let ((pinos (contar-pinos est)))
+    (if (zerop pinos) 0 (/ 1.0 (1+ pinos)))))
+
+(defun h2-extra (estado)
+  "Heuristica Extra: Numero de Pinos - 1."
+  (let ((pinos (contar-pinos estado)))
+    (if (> pinos 0) (1- pinos) 0)))
+
+;;; --- AVALIACAO CORRIGIDA (EVITA LOOP) ---
+
+(defun contar-pecas-jogador (tab j)
+  (if (null tab) 0 
+      (reduce #'+ (mapcar (lambda (lin) (count j lin)) tab))))
+
+(defun pontuacao-posicional (tab j)
+  "Dá mais pontos se as peças estiverem perto da base inimiga."
+  (let ((pontos 0)
+        (l 1))
+    (dolist (linha tab)
+      ;; Se for Jogador 1, quer ir para baixo (linhas maiores valem mais)
+      ;; Se for Jogador 2, quer ir para cima (linhas menores valem mais, invertemos com 8-l)
+      (let ((fator (if (= j 1) l (- 8 l))))
+        (setf pontos (+ pontos (* (count j linha) fator))))
+      (incf l))
+    pontos))
+
 (defun avaliar-estado (tab j)
-  (let ((pecas-j (reduce #'+ (mapcar (lambda (lin) (count j lin)) tab)))
-        (pecas-adv (reduce #'+ (mapcar (lambda (lin) (count (adversario j) lin)) tab))))
-    (- pecas-j pecas-adv)))
-
-;;; --- HEURISTICAS FASE 1 ---
-(defun contar-pinos (tab) (if (null tab) 0 (+ (count 1 (car tab)) (contar-pinos (cdr tab)))))
-(defun h1-base (est) (/ 1.0 (1+ (contar-pinos est))))
+  "Nova Heurística: Material (peso 50) + Posicional (peso 1)"
+  (let* ((adv (adversario j))
+         (pecas-eu (contar-pecas-jogador tab j))
+         (pecas-ele (contar-pecas-jogador tab adv))
+         ;; Valorizar muito ter mais peças que o adversário
+         (score-material (* 50 (- pecas-eu pecas-ele))) 
+         ;; Valorizar avançar no terreno (desempate)
+         (score-posicional (- (pontuacao-posicional tab j) 
+                              (pontuacao-posicional tab adv))))
+    (+ score-material score-posicional)))
