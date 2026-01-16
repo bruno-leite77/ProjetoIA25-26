@@ -60,6 +60,11 @@
                     nil)))
             ops)))
 
+;; --- VITORIA ---
+(defun vitoria-p (tab jog)
+  (let ((alvos (if (= jog 1) '((6 3) (6 4) (6 5) (7 3) (7 4) (7 5)) '((1 3) (1 4) (1 5) (2 3) (2 4) (2 5)))))
+    (some (lambda (a) (eql (celula (first a) (second a) tab) jog)) alvos)))
+
 ;;; --- AVALIACAO ---
 (defun avaliar-estado (tab j)
   (let ((pecas-j (reduce #'+ (mapcar (lambda (lin) (count j lin)) tab)))

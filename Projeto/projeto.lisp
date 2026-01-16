@@ -113,26 +113,20 @@
                   (format t "~%Falha ou opcao invalida.~%")))))
         (format t "~%Problema invalido.~%"))))
 
+
 (defun menu-fase2 ()
-  "Sub-menu para a Fase 2 (Campeonato/Jogo)."
-  (format t "~%--- FASE 2: CAMPEONATO ---~%")
-  (format t "Este modo executa a funcao (jogar estado tempo).~%")
-  (format t "Escolha o tabuleiro inicial (1 a ~d): " (length *lista-problemas*))
-  (let ((n (read)))
-    (if (and (integerp n) (>= n 1) (<= n (length *lista-problemas*)))
-        (let ((tab (nth (1- n) *lista-problemas*)))
-          (format t "Tempo limite por jogada (ms): ")
-          (let ((tempo (read)))
-            (format t "~%A calcular a melhor jogada para o Jogador Atual...~%")
-            ;; Chama a funcao jogar do ficheiro jogo.lisp
-            (let ((resultado (jogar tab tempo)))
-              (if resultado
-                  (progn
-                    (format t "~%Jogada Escolhida: ~a~%" (first resultado))
-                    (format t "Novo Estado:~%")
-                    (imprimir-tabuleiro (second resultado)))
-                  (format t "~%Nenhuma jogada possivel encontrada.~%")))))
-        (format t "~%Problema invalido.~%"))))
+  (format t "~%1. Humano vs Computador~%2. Computador vs Computador~%Opcao: ")
+  (let ((modo (read)))
+    (format t "Tempo limite (ms): ")
+    (let ((tempo (read))
+          (tab-inicial (nth 5 *lista-problemas*))) ;; Problema F (Inicial de 2 jogadores)
+      (cond 
+        ((= modo 1) 
+         (format t "Quem comeca como J1? (H ou C): ")
+         (let ((pri (read)))
+           (ciclo-jogo tab-inicial 1 pri (if (eq pri 'H) 'C 'H) tempo)))
+        ((= modo 2)
+         (ciclo-jogo tab-inicial 1 'C 'C tempo))))))
 
 ;; Para iniciar automaticamente ao carregar (opcional)
 ;; (menu-principal)
