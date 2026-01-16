@@ -3,6 +3,7 @@
 
 ;; AJUSTAR CAMINHO
 ;;(hcl:change-directory "C:/Users/guilh/OneDrive/Documentos/Escolinha/IA/Projeto/Projeto/")
+;;(hcl:change-directory "C:/Users/guerr/OneDrive/Desktop/Faculdade/IA/ProjetoIA25-26/Projeto/")
 (hcl:change-directory "C:/Users/bruno/Desktop/ProjetoIA25-26/Projeto")
 (load "puzzle.lisp")
 (load "procura.lisp")
