@@ -1,4 +1,4 @@
-;;; jogo.lisp - Versão Compativel com 'humano e 'pc
+;;; jogo.lisp - Versao Otimizada (Sem Stack Overflow)
 (load "algoritmo.lisp")
 (load "puzzle.lisp")
 
@@ -11,7 +11,14 @@
     (if (jogo-inicial-p tab) (filtrar-primeira-jogada movs j) movs)))
 
 (defun jogo-inicial-p (tab)
-  (and (= (contar-pecas-j tab 1) 6) (= (contar-pecas-j tab 2) 6)))
+  "Verifica se o tabuleiro e EXATAMENTE o inicial."
+  (equal tab '((nil nil 1 1 1 nil nil)
+               (nil nil 1 1 1 nil nil)
+               (0 0 0 0 0 0 0)
+               (0 0 0 0 0 0 0)
+               (0 0 0 0 0 0 0)
+               (nil nil 2 2 2 nil nil)
+               (nil nil 2 2 2 nil nil))))
 
 (defun contar-pecas-j (tab j) (reduce #'+ (mapcar (lambda (lin) (count j lin)) tab)))
 
@@ -40,7 +47,6 @@
   
   (format t "~%Introduza jogada com parentesis ex: (d 2 3) > ")
   (let ((entrada (read)))
-    ;; Valida se a jogada existe
     (let ((jogada-valida (assoc entrada (gerar-sucessores-f2 tab j) :test #'equal)))
       (if jogada-valida
           (car jogada-valida)
@@ -48,32 +54,40 @@
             (format t "~%Jogada Invalida! Tente novamente.") 
             (ler-jogada-humana tab j))))))
 
-;;; --- CICLO DE JOGO ---
+;;; --- CICLO DE JOGO (Com Otimizacao e Limite) ---
 
-(defun ciclo-jogo (estado j-atual tipo-j1 tipo-j2 tempo)
+(defun ciclo-jogo (estado j-atual tipo-j1 tipo-j2 tempo &optional (num-jogada 1))
+  ;; OTIMIZACAO CRITICA: Isto impede o Stack Overflow reciclando a memoria
+  (declare (optimize (speed 3) (safety 0) (debug 0)))
+  
   (format t "~%---------------------------------------------------")
+  (format t "~%Jogada Global: ~d" num-jogada)
   (imprimir-tabuleiro estado)
   
   (cond 
+    ;; 1. Vitoria
     ((vitoria-p estado 1) (format t "~%!!! VITORIA JOGADOR 1 !!!~%"))
     ((vitoria-p estado 2) (format t "~%!!! VITORIA JOGADOR 2 !!!~%"))
+    
+    ;; 2. Empate por Limite de Jogadas (Evita loops infinitos)
+    ((> num-jogada 150) 
+     (format t "~%!!! EMPATE (Limite de 150 jogadas atingido) !!!~%"))
+    
     (t 
      (let ((tipo-atual (if (= j-atual 1) tipo-j1 tipo-j2)))
        (format t "~%Turno: Jogador ~d (~a)" j-atual tipo-atual)
        
-       ;; VERIFICACAO ROBUSTA: Aceita 'H, 'humano, 'h
        (if (or (eq tipo-atual 'H) (eq tipo-atual 'humano) (eq tipo-atual 'h))
            
-           ;; >>> VEZ DO HUMANO <<<
+           ;; >>> HUMANO <<<
            (let ((jogada (ler-jogada-humana estado j-atual)))
              (let ((novo-estado (cdr (assoc jogada (gerar-sucessores-f2 estado j-atual) :test #'equal))))
-               (ciclo-jogo novo-estado (adversario j-atual) tipo-j1 tipo-j2 tempo)))
+               (ciclo-jogo novo-estado (adversario j-atual) tipo-j1 tipo-j2 tempo (1+ num-jogada))))
            
-           ;; >>> VEZ DO COMPUTADOR <<<
+           ;; >>> COMPUTADOR <<<
            (progn
              (format t "~%O computador esta a pensar...~%")
              (let* ((inicio (get-internal-real-time))
-                    ;; CONFIRMA QUE A FUNCAO NO ALGORITMO.LISP SE CHAMA NEGAMAX
                     (res (negamax estado 4 -999999 999999 j-atual #'gerar-sucessores-f2 #'avaliar-estado tempo inicio))
                     (jogada (second res))
                     (nos (third res))
@@ -83,15 +97,15 @@
                
                (if (null jogada)
                    (progn
-                     (format t "~%Sem jogadas validas. Passa a vez.~%")
-                     (ciclo-jogo estado (adversario j-atual) tipo-j1 tipo-j2 tempo))
+                     (format t "~%O computador nao tem jogadas validas. Passa a vez.~%")
+                     (ciclo-jogo estado (adversario j-atual) tipo-j1 tipo-j2 tempo (1+ num-jogada)))
                    (progn
                      (format t "~%Jogada PC: ~a (Tempo: ~d ms | Nos: ~d)" jogada tempo-gasto nos)
                      (escrever-log-fase2 jogada nos c-alfa c-beta tempo-gasto)
                      (let ((novo-estado (cdr (assoc jogada (gerar-sucessores-f2 estado j-atual) :test #'equal))))
-                       (ciclo-jogo novo-estado (adversario j-atual) tipo-j1 tipo-j2 tempo)))))))))))
+                       (ciclo-jogo novo-estado (adversario j-atual) tipo-j1 tipo-j2 tempo (1+ num-jogada))))))))))))
 
-;;; --- FUNCAO JOGAR (Para manter compatibilidade se necessario) ---
+;;; --- JOGAR (Compatibilidade) ---
 (defun jogar (estado tempo)
   (let* ((inicio (get-internal-real-time))
          (j-atual (if (>= (contar-pecas-j estado 1) (contar-pecas-j estado 2)) 1 2))
