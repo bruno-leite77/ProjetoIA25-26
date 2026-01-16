@@ -1,27 +1,101 @@
-;;; jogo.lisp - Gestao de Partidas
+;;; jogo.lisp - Versão Compativel com 'humano e 'pc
+(load "algoritmo.lisp")
+(load "puzzle.lisp")
+
+;;; --- FUNCOES AUXILIARES ---
 
 (defun gerar-sucessores-f2 (tab j)
-  (let ((movs (mapcan (lambda (l) (mapcan (lambda (c) (tentar-mov-f2 l c tab j)) '(1 2 3 4 5 6 7))) '(1 2 3 4 5 6 7))))
-    (if (and (= (reduce #'+ (mapcar (lambda (lin) (count 1 lin)) tab)) 6)
-             (= (reduce #'+ (mapcar (lambda (lin) (count 2 lin)) tab)) 6))
-        (remove-if-not (lambda (p) (let ((tipo (car (car p)))) (if (= j 1) (eq tipo 'b) (eq tipo 'c)))) movs)
-        movs)))
+  (let ((movs (mapcan (lambda (l) 
+                        (mapcan (lambda (c) (tentar-mov-f2 l c tab j)) '(1 2 3 4 5 6 7))) 
+                      '(1 2 3 4 5 6 7))))
+    (if (jogo-inicial-p tab) (filtrar-primeira-jogada movs j) movs)))
 
-(defun ciclo-jogo (estado j-atual tipo-j1 tipo-j2 tempo)
-  (imprimir-tabuleiro estado)
-  (cond 
-    ((vitoria-p estado 1) (format t "~%Vitoria do Jogador 1!~%"))
-    ((vitoria-p estado 2) (format t "~%Vitoria do Jogador 2!~%"))
-    (t (let ((tipo-atual (if (= j-atual 1) tipo-j1 tipo-j2)))
-         (format t "~%Turno do Jogador ~d (~a): " j-atual tipo-atual)
-         (let ((jogada (if (eq tipo-atual 'H) (ler-jogada-humana estado j-atual) (segundo (negamax-alfa-beta estado 4 -999999 999999 j-atual #'gerar-sucessores-f2 #'avaliar-estado tempo (get-internal-real-time))))))
-           (if (null jogada)
-               (format t "Sem jogadas possiveis. Passa turno.~%")
-               (let ((novo-estado (cdr (assoc jogada (gerar-sucessores-f2 estado j-atual) :test #'equal))))
-                 (format t "Jogada efetuada: ~a~%" jogada)
-                 (ciclo-jogo novo-estado (if (= j-atual 1) 2 1) tipo-j1 tipo-j2 tempo))))))))
+(defun jogo-inicial-p (tab)
+  (and (= (contar-pecas-j tab 1) 6) (= (contar-pecas-j tab 2) 6)))
+
+(defun contar-pecas-j (tab j) (reduce #'+ (mapcar (lambda (lin) (count j lin)) tab)))
+
+(defun filtrar-primeira-jogada (movs j)
+  (remove-if-not (lambda (p) (let ((tipo (car (car p)))) (if (= j 1) (eq tipo 'b) (eq tipo 'c)))) movs))
+
+(defun vitoria-p (tab j)
+  (let ((objetivos (if (= j 1) 
+                       '((6 3) (6 4) (6 5) (7 3) (7 4) (7 5))
+                       '((1 3) (1 4) (1 5) (2 3) (2 4) (2 5)))))
+    (some (lambda (coord) 
+            (eql (celula (first coord) (second coord) tab) j)) 
+          objetivos)))
+
+(defun escrever-log-fase2 (jogada nos c-alfa c-beta tempo)
+  (with-open-file (out "log.dat" :direction :output :if-exists :append :if-does-not-exist :create)
+    (format out "~%[Fase 2] Data: ~a | Jogada: ~a | Nos: ~d | Cortes A: ~d | Cortes B: ~d | Tempo: ~d ms" 
+            (get-universal-time) jogada nos c-alfa c-beta tempo)))
+
+;;; --- LEITURA DE JOGADA HUMANA ---
 
 (defun ler-jogada-humana (tab j)
-  (format t "~%Insira jogada (Tipo L C): ")
+  (format t "~%[Jogador ~d] O seu turno." j)
+  (if (jogo-inicial-p tab)
+      (format t " (Nota: 1a jogada obrigatoria: ~a)" (if (= j 1) "Baixo (b)" "Cima (c)")))
+  
+  (format t "~%Introduza jogada com parentesis ex: (d 2 3) > ")
   (let ((entrada (read)))
-    (if (assoc entrada (gerar-sucessores-f2 tab j) :test #'equal) entrada (progn (format t "Invalida!") (ler-jogada-humana tab j)))))
+    ;; Valida se a jogada existe
+    (let ((jogada-valida (assoc entrada (gerar-sucessores-f2 tab j) :test #'equal)))
+      (if jogada-valida
+          (car jogada-valida)
+          (progn 
+            (format t "~%Jogada Invalida! Tente novamente.") 
+            (ler-jogada-humana tab j))))))
+
+;;; --- CICLO DE JOGO ---
+
+(defun ciclo-jogo (estado j-atual tipo-j1 tipo-j2 tempo)
+  (format t "~%---------------------------------------------------")
+  (imprimir-tabuleiro estado)
+  
+  (cond 
+    ((vitoria-p estado 1) (format t "~%!!! VITORIA JOGADOR 1 !!!~%"))
+    ((vitoria-p estado 2) (format t "~%!!! VITORIA JOGADOR 2 !!!~%"))
+    (t 
+     (let ((tipo-atual (if (= j-atual 1) tipo-j1 tipo-j2)))
+       (format t "~%Turno: Jogador ~d (~a)" j-atual tipo-atual)
+       
+       ;; VERIFICACAO ROBUSTA: Aceita 'H, 'humano, 'h
+       (if (or (eq tipo-atual 'H) (eq tipo-atual 'humano) (eq tipo-atual 'h))
+           
+           ;; >>> VEZ DO HUMANO <<<
+           (let ((jogada (ler-jogada-humana estado j-atual)))
+             (let ((novo-estado (cdr (assoc jogada (gerar-sucessores-f2 estado j-atual) :test #'equal))))
+               (ciclo-jogo novo-estado (adversario j-atual) tipo-j1 tipo-j2 tempo)))
+           
+           ;; >>> VEZ DO COMPUTADOR <<<
+           (progn
+             (format t "~%O computador esta a pensar...~%")
+             (let* ((inicio (get-internal-real-time))
+                    ;; CONFIRMA QUE A FUNCAO NO ALGORITMO.LISP SE CHAMA NEGAMAX
+                    (res (negamax estado 4 -999999 999999 j-atual #'gerar-sucessores-f2 #'avaliar-estado tempo inicio))
+                    (jogada (second res))
+                    (nos (third res))
+                    (c-alfa (fourth res))
+                    (c-beta (fifth res))
+                    (tempo-gasto (- (get-internal-real-time) inicio)))
+               
+               (if (null jogada)
+                   (progn
+                     (format t "~%Sem jogadas validas. Passa a vez.~%")
+                     (ciclo-jogo estado (adversario j-atual) tipo-j1 tipo-j2 tempo))
+                   (progn
+                     (format t "~%Jogada PC: ~a (Tempo: ~d ms | Nos: ~d)" jogada tempo-gasto nos)
+                     (escrever-log-fase2 jogada nos c-alfa c-beta tempo-gasto)
+                     (let ((novo-estado (cdr (assoc jogada (gerar-sucessores-f2 estado j-atual) :test #'equal))))
+                       (ciclo-jogo novo-estado (adversario j-atual) tipo-j1 tipo-j2 tempo)))))))))))
+
+;;; --- FUNCAO JOGAR (Para manter compatibilidade se necessario) ---
+(defun jogar (estado tempo)
+  (let* ((inicio (get-internal-real-time))
+         (j-atual (if (>= (contar-pecas-j estado 1) (contar-pecas-j estado 2)) 1 2))
+         (res (negamax estado 4 -999999 999999 j-atual #'gerar-sucessores-f2 #'avaliar-estado tempo inicio)))
+    (if (second res)
+        (list (second res) (cdr (assoc (second res) (gerar-sucessores-f2 estado j-atual) :test #'equal)))
+        nil)))

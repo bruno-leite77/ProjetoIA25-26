@@ -64,3 +64,14 @@
  (nil nil 1 1 1 nil nil)
 )
 
+;; multiplayer
+(
+ (nil nil 1 1 1 nil nil)
+ (nil nil 1 1 1 nil nil)
+ (0 0 0 0 0 0 0)
+ (0 0 0 0 0 0 0)
+ (0 0 0 0 0 0 0)
+ (nil nil 2 2 2 nil nil)
+ (nil nil 2 2 2 nil nil)
+)
+

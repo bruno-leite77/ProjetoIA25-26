@@ -2,8 +2,8 @@
 ;;; Ficheiro Principal - Integracao Fase 1 e Fase 2
 
 ;; AJUSTAR CAMINHO
-(hcl:change-directory "C:/Users/guilh/OneDrive/Documentos/Escolinha/IA/Projeto/Projeto/")
-
+;;(hcl:change-directory "C:/Users/guilh/OneDrive/Documentos/Escolinha/IA/Projeto/Projeto/")
+(hcl:change-directory "C:/Users/bruno/Desktop/ProjetoIA25-26/Projeto")
 (load "puzzle.lisp")
 (load "procura.lisp")
 (load "algoritmo.lisp")
@@ -80,7 +80,7 @@
   (format t "   PROJETO SOLITARIO - IA 2025/2026            ~%")
   (format t "===============================================~%")
   (format t " 1. Fase 1: Resolver Problema (1 Jogador)~%")
-  (format t " 2. Fase 2: Campeonato (2 Jogadores)~%")
+  (format t " 2. Fase 2: Multijogador (2 Jogadores)~%")
   (format t " 0. Sair~%")
   (format t "Opcao > ")
   
@@ -115,18 +115,41 @@
 
 
 (defun menu-fase2 ()
-  (format t "~%1. Humano vs Computador~%2. Computador vs Computador~%Opcao: ")
-  (let ((modo (read)))
-    (format t "Tempo limite (ms): ")
-    (let ((tempo (read))
-          (tab-inicial (nth 5 *lista-problemas*))) ;; Problema F (Inicial de 2 jogadores)
-      (cond 
-        ((= modo 1) 
-         (format t "Quem comeca como J1? (H ou C): ")
-         (let ((pri (read)))
-           (ciclo-jogo tab-inicial 1 pri (if (eq pri 'H) 'C 'H) tempo)))
-        ((= modo 2)
-         (ciclo-jogo tab-inicial 1 'C 'C tempo))))))
+  (format t "~%--- JOGO SOLITARIO 2 (Versao Interativa) ---~%")
+  (if (null *lista-problemas*) (ler-ficheiro "problemas.dat"))
+  
+  (format t "Escolha o tabuleiro (1 a ~d): " (length *lista-problemas*))
+  (let ((n (read)))
+    (if (and (integerp n) (>= n 1) (<= n (length *lista-problemas*)))
+        (let ((tab (nth (1- n) *lista-problemas*)))
+          (format t "~%1. Humano vs Computador")
+          (format t "~%2. Computador vs Computador")
+          (format t "~%Opcao > ")
+          (let ((op (read)))
+            (cond
+              ;; HUMANO vs PC
+              ((= op 1)
+               (format t "Quem joga com as pecas de CIMA (Jogador 1)?")
+               (format t "~%1. Humano (Tu)")
+               (format t "~%2. Computador")
+               (format t "~%Opcao > ")
+               (let ((quem (read)))
+                 (format t "Tempo limite para o PC (ms): ")
+                 (let ((tempo (read)))
+                   ;; Se escolheres 1, Humano joga primeiro. Se 2, PC joga primeiro.
+                   (if (= quem 1)
+                       (ciclo-jogo tab 1 'humano 'pc tempo)
+                       (ciclo-jogo tab 1 'pc 'humano tempo)))))
+              
+              ;; PC vs PC
+              ((= op 2)
+               (format t "Tempo limite por jogada (ms): ")
+               (let ((tempo (read)))
+                 (ciclo-jogo tab 1 'pc 'pc tempo)))
+              
+              (t (format t "Opcao invalida.")))))
+        (format t "~%Tabuleiro invalido."))))
+
 
 ;; Para iniciar automaticamente ao carregar (opcional)
 ;; (menu-principal)

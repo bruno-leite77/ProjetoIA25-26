@@ -14,3 +14,32 @@ Data: 3977484985 | Prob: 2 | Alg: 2 | Sol: 3 | Nos: 9 | Exp: 4 | T: 0 ms | Pen: 
 Data: 3977500341 | Prob: 1 | Alg: 1 | Sol: 2 | Nos: 5 | Exp: 3 | T: 0 ms | Pen: 0.400 | Ram: 1.562
 Data: 3977500350 | Prob: 2 | Alg: 1 | Sol: 3 | Nos: 13 | Exp: 9 | T: 16 ms | Pen: 0.231 | Ram: 1.877
 Data: 3977500376 | Prob: 1 | Alg: 1 | Sol: 2 | Nos: 5 | Exp: 3 | T: 0 ms | Pen: 0.400 | Ram: 1.562
+[Fase 2] Data: 3977574275 | Jogada: (C 6 3) | Nos: NIL | Cortes A: NIL | Cortes B: NIL | Tempo: 109 ms
+[Fase 2] Data: 3977574335 | Jogada: (C 6 4) | Nos: NIL | Cortes A: NIL | Cortes B: NIL | Tempo: 101 ms
+[Fase 2] Data: 3977574901 | Jogada: (C 6 3) | Nos: NIL | Cortes A: NIL | Cortes B: NIL | Tempo: 70 ms
+[Fase 2] Data: 3977574919 | Jogada: (CC 5 3) | Nos: NIL | Cortes A: NIL | Cortes B: NIL | Tempo: 162 ms
+[Fase 2] Data: 3977574932 | Jogada: (CC 3 3) | Nos: NIL | Cortes A: NIL | Cortes B: NIL | Tempo: 182 ms
+[Fase 2] Data: 3977574963 | Jogada: (B 2 3) | Nos: NIL | Cortes A: NIL | Cortes B: NIL | Tempo: 64 ms
+[Fase 2] Data: 3977574963 | Jogada: (C 6 3) | Nos: NIL | Cortes A: NIL | Cortes B: NIL | Tempo: 75 ms
+[Fase 2] Data: 3977574963 | Jogada: (B 1 3) | Nos: NIL | Cortes A: NIL | Cortes B: NIL | Tempo: 143 ms
+[Fase 2] Data: 3977574963 | Jogada: (D 5 3) | Nos: NIL | Cortes A: NIL | Cortes B: NIL | Tempo: 138 ms
+[Fase 2] Data: 3977574963 | Jogada: (E 1 4) | Nos: NIL | Cortes A: NIL | Cortes B: NIL | Tempo: 134 ms
+[Fase 2] Data: 3977574964 | Jogada: (D 5 4) | Nos: NIL | Cortes A: NIL | Cortes B: NIL | Tempo: 114 ms
+[Fase 2] Data: 3977574964 | Jogada: (D 1 3) | Nos: NIL | Cortes A: NIL | Cortes B: NIL | Tempo: 149 ms
+[Fase 2] Data: 3977574964 | Jogada: (D 5 5) | Nos: NIL | Cortes A: NIL | Cortes B: NIL | Tempo: 104 ms
+[Fase 2] Data: 3977574964 | Jogada: (E 1 4) | Nos: NIL | Cortes A: NIL | Cortes B: NIL | Tempo: 137 ms
+[Fase 2] Data: 3977574964 | Jogada: (D 5 6) | Nos: NIL | Cortes A: NIL | Cortes B: NIL | Tempo: 132 ms
+[Fase 2] Data: 3977574964 | Jogada: (D 1 3) | Nos: NIL | Cortes A: NIL | Cortes B: NIL | Tempo: 150 ms
+[Fase 2] Data: 3977574964 | Jogada: (E 5 7) | Nos: NIL | Cortes A: NIL | Cortes B: NIL | Tempo: 115 ms
+[Fase 2] Data: 3977574965 | Jogada: (E 1 4) | Nos: NIL | Cortes A: NIL | Cortes B: NIL | Tempo: 141 ms
+[Fase 2] Data: 3977574965 | Jogada: (D 5 6) | Nos: NIL | Cortes A: NIL | Cortes B: NIL | Tempo: 132 ms
+[Fase 2] Data: 3977574965 | Jogada: (D 1 3) | Nos: NIL | Cortes A: NIL | Cortes B: NIL | Tempo: 157 ms
+[Fase 2] Data: 3977574965 | Jogada: (E 5 7) | Nos: NIL | Cortes A: NIL | Cortes B: NIL | Tempo: 115 ms
+[Fase 2] Data: 3977574965 | Jogada: (E 1 4) | Nos: NIL | Cortes A: NIL | Cortes B: NIL | Tempo: 140 ms
+[Fase 2] Data: 3977574965 | Jogada: (D 5 6) | Nos: NIL | Cortes A: NIL | Cortes B: NIL | Tempo: 133 ms
+[Fase 2] Data: 3977574965 | Jogada: (D 1 3) | Nos: NIL | Cortes A: NIL | Cortes B: NIL | Tempo: 166 ms
+[Fase 2] Data: 3977574966 | Jogada: (E 5 7) | Nos: NIL | Cortes A: NIL | Cortes B: NIL | Tempo: 133 ms
+[Fase 2] Data: 3977574966 | Jogada: (E 1 4) | Nos: NIL | Cortes A: NIL | Cortes B: NIL | Tempo: 140 ms
+[Fase 2] Data: 3977574966 | Jogada: (D 5 6) | Nos: NIL | Cortes A: NIL | Cortes B: NIL | Tempo: 141 ms
+[Fase 2] Data: 3977574966 | Jogada: (D 1 3) | Nos: NIL | Cortes A: NIL | Cortes B: NIL | Tempo: 156 ms
+[Fase 2] Data: 3977574966 | Jogada: (E 5 7) | Nos: NIL | Cortes A: NIL | Cortes B: NIL | Tempo: 117 ms

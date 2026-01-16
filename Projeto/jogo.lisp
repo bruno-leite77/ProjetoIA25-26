@@ -11,7 +11,13 @@
     (if (jogo-inicial-p tab) (filtrar-primeira-jogada movs j) movs)))
 
 (defun jogo-inicial-p (tab)
-  (and (= (contar-pecas-j tab 1) 6) (= (contar-pecas-j tab 2) 6)))
+  (equal tab '((nil nil 1 1 1 nil nil)
+               (nil nil 1 1 1 nil nil)
+               (0 0 0 0 0 0 0)
+               (0 0 0 0 0 0 0)
+               (0 0 0 0 0 0 0)
+               (nil nil 2 2 2 nil nil)
+               (nil nil 2 2 2 nil nil))))
 
 (defun contar-pecas-j (tab j) (reduce #'+ (mapcar (lambda (lin) (count j lin)) tab)))
 
@@ -51,7 +57,7 @@
 ;;; --- CICLO DE JOGO ---
 
 (defun ciclo-jogo (estado j-atual tipo-j1 tipo-j2 tempo)
-  (format t "~%---------------------------------------------------")
+  (format t "~%---------------------------------------------------~%")
   (imprimir-tabuleiro estado)
   
   (cond 
@@ -74,7 +80,7 @@
              (format t "~%O computador esta a pensar...~%")
              (let* ((inicio (get-internal-real-time))
                     ;; CONFIRMA QUE A FUNCAO NO ALGORITMO.LISP SE CHAMA NEGAMAX
-                    (res (negamax estado 4 -999999 999999 j-atual #'gerar-sucessores-f2 #'avaliar-estado tempo inicio))
+                    (res (negamax-alfa-beta estado 4 -999999 999999 j-atual #'gerar-sucessores-f2 #'avaliar-estado tempo inicio))
                     (jogada (second res))
                     (nos (third res))
                     (c-alfa (fourth res))

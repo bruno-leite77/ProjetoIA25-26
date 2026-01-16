@@ -113,43 +113,49 @@
                   (format t "~%Falha ou opcao invalida.~%")))))
         (format t "~%Problema invalido.~%"))))
 
+(defun tabuleiro-oficial ()
+  "Retorna o tabuleiro inicial padrao do Solitario 2."
+  '((nil nil 1 1 1 nil nil)
+    (nil nil 1 1 1 nil nil)
+    (0 0 0 0 0 0 0)
+    (0 0 0 0 0 0 0)
+    (0 0 0 0 0 0 0)
+    (nil nil 2 2 2 nil nil)
+    (nil nil 2 2 2 nil nil)))
 
 (defun menu-fase2 ()
-  (format t "~%--- JOGO SOLITARIO 2 (Versao Interativa) ---~%")
-  (if (null *lista-problemas*) (ler-ficheiro "problemas.dat"))
+  (format t "~%--- JOGO SOLITARIO 2 (Versao Oficial) ---~%")
   
-  (format t "Escolha o tabuleiro (1 a ~d): " (length *lista-problemas*))
-  (let ((n (read)))
-    (if (and (integerp n) (>= n 1) (<= n (length *lista-problemas*)))
-        (let ((tab (nth (1- n) *lista-problemas*)))
-          (format t "~%1. Humano vs Computador")
-          (format t "~%2. Computador vs Computador")
-          (format t "~%Opcao > ")
-          (let ((op (read)))
-            (cond
-              ;; HUMANO vs PC
-              ((= op 1)
-               (format t "Quem joga com as pecas de CIMA (Jogador 1)?")
-               (format t "~%1. Humano (Tu)")
-               (format t "~%2. Computador")
-               (format t "~%Opcao > ")
-               (let ((quem (read)))
-                 (format t "Tempo limite para o PC (ms): ")
-                 (let ((tempo (read)))
-                   ;; Se escolheres 1, Humano joga primeiro. Se 2, PC joga primeiro.
-                   (if (= quem 1)
-                       (ciclo-jogo tab 1 'humano 'pc tempo)
-                       (ciclo-jogo tab 1 'pc 'humano tempo)))))
-              
-              ;; PC vs PC
-              ((= op 2)
-               (format t "Tempo limite por jogada (ms): ")
-               (let ((tempo (read)))
-                 (ciclo-jogo tab 1 'pc 'pc tempo)))
-              
-              (t (format t "Opcao invalida.")))))
-        (format t "~%Tabuleiro invalido."))))
-
-
-;; Para iniciar automaticamente ao carregar (opcional)
-;; (menu-principal)
+  ;; Em vez de pedir para escolher, carregamos logo o oficial:
+  (let ((tab (tabuleiro-oficial)))
+    (format t "~%Tabuleiro Inicial Carregado.~%")
+    
+    (format t "~%1. Humano vs Computador")
+    (format t "~%2. Computador vs Computador")
+    (format t "~%Opcao > ")
+    (let ((op (read)))
+      (cond
+        ;; HUMANO vs PC
+        ((= op 1)
+         (format t "Quem joga com as pecas de CIMA (Jogador 1)?")
+         (format t "~%1. Humano (Tu)")
+         (format t "~%2. Computador")
+         (format t "~%Opcao > ")
+         (let ((quem (read)))
+           (format t "Tempo limite para o PC (ms): ")
+           (let ((tempo (read)))
+             (if (= quem 1)
+                 (ciclo-jogo tab 1 'humano 'pc tempo)
+                 (ciclo-jogo tab 1 'pc 'humano tempo)))))
+        
+        ;; PC vs PC
+        ((= op 2)
+         (format t "Tempo limite por jogada (ms): ")
+         (let ((tempo (read)))
+           (ciclo-jogo tab 1 'pc 'pc tempo)))
+        
+        (t (format t "Opcao invalida.")))))
+  
+  ;; Se quiseres voltar ao menu principal no fim, descomenta a linha abaixo:
+  ;; (menu-principal)
+  )
