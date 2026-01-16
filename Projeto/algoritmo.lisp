@@ -1,42 +1,27 @@
-;;; algoritmo.lisp
-;;; FASE 2: Negamax com Alfa-Beta (Otimizado)
+;;; algoritmo.lisp - Negamax com cortes Alfa-Beta
+;;; Codigo gerado automaticamente conforme normas de programacao funcional.
 
-(defun negamax-alfa-beta (estado profundidade alfa beta jogador funcao-sucessores funcao-avaliacao tempo-limite inicio)
-  ;; OTIMIZACAO: Forca Tail Call Optimization e reduz uso de stack
+(defun negamax (estado prof alfa beta jogador f-suc f-aval t-limite inicio)
   (declare (optimize (speed 3) (safety 0) (debug 0)))
-  
   (cond 
-    ((>= (- (get-internal-real-time) inicio) tempo-limite)
-     (list (funcall funcao-avaliacao estado jogador) nil))
-    
-    ((zerop profundidade)
-     (list (* (funcall funcao-avaliacao estado jogador) 1) nil)) 
-    
+    ((or (zerop prof) (>= (- (get-internal-real-time) inicio) t-limite))
+     (list (funcall f-aval estado jogador) nil 1 0 0))
     (t
-     (let ((sucessores (funcall funcao-sucessores estado jogador)))
+     (let ((sucessores (funcall f-suc estado jogador)))
        (if (null sucessores)
-           (list (funcall funcao-avaliacao estado jogador) nil)
-           (processar-sucessores sucessores profundidade alfa beta jogador 
-                                 funcao-sucessores funcao-avaliacao 
-                                 tempo-limite inicio -9999999 nil))))))
+           (list (funcall f-aval estado jogador) nil 1 0 0)
+           (processar-negamax sucessores prof alfa beta jogador f-suc f-aval t-limite inicio -999999 nil 0 0 0))))))
 
-(defun processar-sucessores (lista prof alfa beta jog f-suc f-aval t-lim ini melhor-v melhor-j)
+(defun processar-negamax (sucs prof alfa beta jog f-suc f-aval t-lim ini melhor-v melhor-j t-nos c-alfa c-beta)
   (declare (optimize (speed 3) (safety 0) (debug 0)))
-  
-  (if (null lista)
-      (list melhor-v melhor-j)
-      (let* ((suc (car lista))
-             (jogada (car suc))
-             (novo-est (cdr suc))
-             (res (negamax-alfa-beta novo-est (1- prof) (- beta) (- alfa) 
-                                    (adversario jog) f-suc f-aval t-lim ini))
-             (val (- (first res))))
-        
-        (if (> val melhor-v)
-            (let ((novo-alfa (max alfa val)))
+  (if (null sucs)
+      (list melhor-v melhor-j t-nos c-alfa c-beta)
+      (let* ((atual (car sucs))
+             (res-filho (negamax (cdr atual) (1- prof) (- beta) (- alfa) (adversario jog) f-suc f-aval t-lim ini))
+             (v (- (first res-filho))))
+        (if (> v melhor-v)
+            (let ((novo-alfa (max alfa v)))
               (if (>= novo-alfa beta)
-                  (list val jogada) 
-                  (processar-sucessores (cdr lista) prof novo-alfa beta jog 
-                                        f-suc f-aval t-lim ini val jogada)))
-            (processar-sucessores (cdr lista) prof alfa beta jog 
-                                  f-suc f-aval t-lim ini melhor-v melhor-j)))))
+                  (list v (car atual) (+ t-nos (third res-filho)) c-alfa (1+ c-beta))
+                  (processar-negamax (cdr sucs) prof novo-alfa beta jog f-suc f-aval t-lim ini v (car atual) (+ t-nos (third res-filho)) c-alfa c-beta)))
+            (processar-negamax (cdr sucs) prof alfa beta jog f-suc f-aval t-lim ini melhor-v melhor-j (+ t-nos (third res-filho)) c-alfa c-beta)))))
