@@ -88,7 +88,7 @@
            (progn
              (format t "~%O computador esta a pensar...~%")
              (let* ((inicio (get-internal-real-time))
-                    (res (negamax estado 4 -999999 999999 j-atual #'gerar-sucessores-f2 #'avaliar-estado tempo inicio))
+                    (res (negamax-alfa-beta estado 4 -999999 999999 j-atual #'gerar-sucessores-f2 #'avaliar-estado tempo inicio))
                     (jogada (second res))
                     (nos (third res))
                     (c-alfa (fourth res))

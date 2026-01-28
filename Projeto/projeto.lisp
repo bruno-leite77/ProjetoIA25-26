@@ -17,10 +17,11 @@
 ;;; ---------------------------------------------------------
 
 (defun ler-ficheiro (nome-ficheiro)
-  "Le o ficheiro problemas.dat e carrega a variavel global."
+  ;; Le o ficheiro problemas.dat e carrega a variavel global
   (let ((ficheiro (if (probe-file nome-ficheiro) nome-ficheiro "problemas.dat")))
     (if (probe-file ficheiro)
         (with-open-file (in ficheiro :direction :input)
+          ;; Le linha a linha ate ao eof
           (setf *lista-problemas* (loop for linha = (read in nil 'eof)
                       until (eq linha 'eof)
                       collect linha))
@@ -28,11 +29,12 @@
         (format t "~%Erro: Ficheiro '~a' nao encontrado.~%" ficheiro))))
 
 (defun escrever-log (resultado alg prob-id)
-  "Escreve os resultados no ficheiro log.dat (Fase 1)."
+  ;; Escreve os resultados no ficheiro log.dat (Fase 1)
   (with-open-file (out "log.dat" :direction :output :if-exists :append :if-does-not-exist :create)
     (if (null resultado)
         (format out "~%Data: ~a | Prob: ~d | Alg: ~a | Resultado: FALHOU" 
                 (get-universal-time) prob-id alg)
+      ;; Extrai as stats
         (let* ((no (first resultado))
                (g (second resultado)) (e (third resultado)) (tm (fourth resultado))
                (L (no-g no)) (P (penetrancia L g)) (B (ramificacao-media L g)))
@@ -48,13 +50,13 @@
     (format t " ~a~%" linha)))
 
 (defun mostrar-solucao (resultado)
-  "Mostra a solucao da Fase 1 (Caminho de estados)."
+  ;; Mostra a solucao da Fase 1 (Caminho de estados)
   (if (null resultado)
       (format t "~%Nenhuma solucao encontrada.~%")
       (let* ((no-final (first resultado))
              (caminho nil)
              (atual no-final))
-        ;; Reconstruir caminho (tracar pai a pai)
+        ;; Segue os pais de tras para a frente
         (loop while atual do
               (push atual caminho)
               (setf atual (no-pai atual)))
@@ -73,7 +75,7 @@
 ;;; ---------------------------------------------------------
 
 (defun menu-principal ()
-  "Menu Principal do Projeto (Fase 1 e 2)."
+  ;; Menu Principal do Projeto (Fase 1 e 2)
   ;; Tenta carregar problemas se a lista estiver vazia
   (if (null *lista-problemas*) (ler-ficheiro "problemas.dat"))
   
@@ -93,7 +95,7 @@
       (t (format t "~%Opcao invalida.~%") (menu-principal)))))
 
 (defun menu-fase1 ()
-  "Sub-menu para a Fase 1 (Procura)."
+  ;; Sub-menu para a Fase 1 (Procura)
   (format t "~%--- FASE 1: PROCURA ---~%")
   (format t "Escolha o problema (1 a ~d): " (length *lista-problemas*))
   (let ((n (read)))
@@ -115,7 +117,7 @@
         (format t "~%Problema invalido.~%"))))
 
 (defun tabuleiro-oficial ()
-  "Retorna o tabuleiro inicial padrao do Solitario 2."
+  ;; Retorna o tabuleiro inicial padrao do Solitario 2
   '((nil nil 1 1 1 nil nil)
     (nil nil 1 1 1 nil nil)
     (0 0 0 0 0 0 0)
@@ -127,7 +129,7 @@
 (defun menu-fase2 ()
   (format t "~%--- JOGO SOLITARIO 2 (Versao Oficial) ---~%")
   
-  ;; Em vez de pedir para escolher, carregamos logo o oficial:
+  ;; Em vez de pedir para escolher, carregamos logo o inicial
   (let ((tab (tabuleiro-oficial)))
     (format t "~%Tabuleiro Inicial Carregado.~%")
     
@@ -157,6 +159,6 @@
         
         (t (format t "Opcao invalida.")))))
   
-  ;; Se quiseres voltar ao menu principal no fim, descomenta a linha abaixo:
+  ;; Para voltar ao menu principal:
   ;; (menu-principal)
   )

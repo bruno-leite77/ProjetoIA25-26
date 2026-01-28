@@ -1,8 +1,7 @@
-;;; procura.lisp - Algoritmos de Procura e Metricas
+;;; procura.lisp - Algoritmos de Procura e Metricas (Versao Final)
+;;; Codigo gerado automaticamente conforme normas de programacao funcional.
 
 ;;; --- 1. ESTRUTURA DO NO ---
-
-;; Cada nó guarda o estado, o custo g (passos dados), h (estimativa) e o nó pai
 (defun criar-no (estado &optional (g 0) (h 0) (pai nil)) (list estado g h pai))
 (defun no-estado (no) (first no))
 (defun no-g (no) (second no))
@@ -11,34 +10,29 @@
 (defun no-custo (no) (+ (no-g no) (no-heuristica no)))
 
 ;;; --- 2. AUXILIARES ---
-
-;; O objetivo na Fase 1 é restar apenas 1 peça
 (defun solucaop (no) (= (contar-pinos (no-estado no)) 1))
 
-;; Ordena a lista de nós pelo custo f = g + h (para o A*)
 (defun ordenar-nos (lista) (sort (copy-list lista) #'< :key #'no-custo))
 
-;; Gera todos os filhos de um nó aplicando os operadores possíveis
+;; Funcao de sucessores generica para Fase 1
 (defun gerar-sucessores-f1 (no h-fn)
   (let ((estado (no-estado no)) (g (no-g no)))
-    ;; Itera todas as linhas e colunas
     (mapcan (lambda (l)
               (mapcan (lambda (c)
                         (mapcan (lambda (op)
-                                  ;; Aplica operador. Se der nil, ignora. Se der estado, cria nó.
                                   (let ((res (funcall op l c estado)))
                                     (if res (list (criar-no res (1+ g) (if h-fn (funcall h-fn res) 0) no)) nil)))
                                 (operadores-f1)))
                       '(1 2 3 4 5 6 7)))
             '(1 2 3 4 5 6 7))))
 
-;;; --- 3. METRICAS  ---
+;;; --- 3. METRICAS (ESTAVAM EM FALTA) ---
 (defun penetrancia (L T-total)
-  ;; Penetrância = Comprimento da solução / Total de nós gerados
+  "Calcula a penetrancia: Comprimento solucao / Total nos gerados"
   (if (zerop T-total) 0 (float (/ L T-total))))
 
 (defun ramificacao-media (L T-total)
-  ;; Calcula o fator de ramificação média usando o método da bisseção
+  "Calcula o fator de ramificacao medio (B*) usando bisseccao."
   (if (<= T-total L) 1.0 (bisseccao L T-total 1.0 10.0 0.01)))
 
 (defun bisseccao (L T-alvo min max erro)
@@ -52,23 +46,22 @@
 
 ;;; --- 4. ALGORITMOS DE PROCURA ---
 
-;;; BFS (Largura) - Fila FIFO com append no fim
+;;; BFS (Largura)
 (defun bfs (no-inicial)
-  (declare (optimize (speed 3) (safety 0) (debug 0))) ;; Otimização de compilador
+  (declare (optimize (speed 3) (safety 0) (debug 0)))
   (let ((inicio (get-internal-run-time)))
     (labels ((bfs-rec (abertos fechados ger exp)
-               (if (null abertos) nil ;; Falhou 
+               (if (null abertos) nil
                    (let ((atual (car abertos)))
                      (if (solucaop atual)
-                         (list atual ger exp (- (get-internal-run-time) inicio)) ;; Encontrou solução
+                         (list atual ger exp (- (get-internal-run-time) inicio))
                          (if (member (no-estado atual) fechados :test #'equal)
-                             (bfs-rec (cdr abertos) fechados ger exp) ;; Já visitado, ignora
-                           ;; Gera sucessores e mete no FIM da lista (Largura)
+                             (bfs-rec (cdr abertos) fechados ger exp)
                              (let ((suc (gerar-sucessores-f1 atual nil)))
                                (bfs-rec (append (cdr abertos) suc) (cons (no-estado atual) fechados) (+ ger (length suc)) (1+ exp)))))))))
       (bfs-rec (list no-inicial) nil 1 0))))
 
-;;; DFS (Profundidade) - Pilha LIFO com append no inicio
+;;; DFS (Profundidade) - ADICIONADO
 (defun dfs (no-inicial prof-max)
   (declare (optimize (speed 3) (safety 0) (debug 0)))
   (let ((inicio (get-internal-run-time)))
@@ -78,18 +71,16 @@
                      (cond 
                        ((solucaop atual)
                         (list atual ger exp (- (get-internal-run-time) inicio)))
-                       ;; Corte em profundidade 
                        ((> (no-g atual) prof-max) 
                         (dfs-rec (cdr abertos) fechados ger exp))
                        ((member (no-estado atual) fechados :test #'equal)
                         (dfs-rec (cdr abertos) fechados ger exp))
                        (t
-                        ;; Gera sucessores e mete no INÍCIO da lista (Profundidade)
                         (let ((suc (gerar-sucessores-f1 atual nil)))
                           (dfs-rec (append suc (cdr abertos)) (cons (no-estado atual) fechados) (+ ger (length suc)) (1+ exp)))))))))
       (dfs-rec (list no-inicial) nil 1 0))))
 
-;;; A* (Melhor Primeiro) - Lista ordenada pelo custo total f
+;;; A* (Melhor Primeiro)
 (defun a-star (no-inicial h-fn)
   (declare (optimize (speed 3) (safety 0) (debug 0)))
   (let ((inicio (get-internal-run-time)))
@@ -101,7 +92,6 @@
                          (if (member (no-estado atual) fechados :test #'equal)
                              (as-rec (cdr abertos) fechados ger exp)
                              (let ((suc (gerar-sucessores-f1 atual h-fn)))
-                               ;; Ordena a lista sempre que adiciona novos nós
                                (as-rec (ordenar-nos (append (cdr abertos) suc)) 
                                        (cons (no-estado atual) fechados) 
                                        (+ ger (length suc)) 

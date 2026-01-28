@@ -1,17 +1,19 @@
-;;; jogo.lisp - Versao Otimizada (Sem Stack Overflow)
+;;; jogo.lisp
 (load "algoritmo.lisp")
 (load "puzzle.lisp")
 
 ;;; --- FUNCOES AUXILIARES ---
 
+;; Gera todas as jogados possiveis para o jogador j no tabuleiro atual
 (defun gerar-sucessores-f2 (tab j)
   (let ((movs (mapcan (lambda (l) 
                         (mapcan (lambda (c) (tentar-mov-f2 l c tab j)) '(1 2 3 4 5 6 7))) 
                       '(1 2 3 4 5 6 7))))
+    ;; Na primeira jogada algumas peças estão bloqueadas
     (if (jogo-inicial-p tab) (filtrar-primeira-jogada movs j) movs)))
 
 (defun jogo-inicial-p (tab)
-  "Verifica se o tabuleiro e EXATAMENTE o inicial."
+  ;; Verifica se o tabuleiro e o inicial
   (equal tab '((nil nil 1 1 1 nil nil)
                (nil nil 1 1 1 nil nil)
                (0 0 0 0 0 0 0)
@@ -22,17 +24,20 @@
 
 (defun contar-pecas-j (tab j) (reduce #'+ (mapcar (lambda (lin) (count j lin)) tab)))
 
+;; Filta os movimentos proibidos no primeiro turno
 (defun filtrar-primeira-jogada (movs j)
   (remove-if-not (lambda (p) (let ((tipo (car (car p)))) (if (= j 1) (eq tipo 'b) (eq tipo 'c)))) movs))
 
+;; Verifica se alguem ganhou (chegou ao outro lado)
 (defun vitoria-p (tab j)
   (let ((objetivos (if (= j 1) 
-                       '((6 3) (6 4) (6 5) (7 3) (7 4) (7 5))
-                       '((1 3) (1 4) (1 5) (2 3) (2 4) (2 5)))))
+                       '((6 3) (6 4) (6 5) (7 3) (7 4) (7 5)) ;; Base do jogador 2
+                       '((1 3) (1 4) (1 5) (2 3) (2 4) (2 5))))) ;; Base do jogador 1
     (some (lambda (coord) 
             (eql (celula (first coord) (second coord) tab) j)) 
           objetivos)))
 
+;; Gravar stats no log
 (defun escrever-log-fase2 (jogada nos c-alfa c-beta tempo)
   (with-open-file (out "log.dat" :direction :output :if-exists :append :if-does-not-exist :create)
     (format out "~%[Fase 2] Data: ~a | Jogada: ~a | Nos: ~d | Cortes A: ~d | Cortes B: ~d | Tempo: ~d ms" 
@@ -47,6 +52,7 @@
   
   (format t "~%Introduza jogada com parentesis ex: (d 2 3) > ")
   (let ((entrada (read)))
+    ;; Valida se a jogada existe na lista de sucessores
     (let ((jogada-valida (assoc entrada (gerar-sucessores-f2 tab j) :test #'equal)))
       (if jogada-valida
           (car jogada-valida)
@@ -54,10 +60,11 @@
             (format t "~%Jogada Invalida! Tente novamente.") 
             (ler-jogada-humana tab j))))))
 
-;;; --- CICLO DE JOGO (Com Otimizacao e Limite) ---
+;;; --- CICLO DE JOGO  ---
 
+;; Corre o jogo recursivamente até haver um vencedor
 (defun ciclo-jogo (estado j-atual tipo-j1 tipo-j2 tempo &optional (num-jogada 1))
-  ;; OTIMIZACAO CRITICA: Isto impede o Stack Overflow reciclando a memoria
+  ;; Evita o stack overflow em jogos longos
   (declare (optimize (speed 3) (safety 0) (debug 0)))
   
   (format t "~%---------------------------------------------------")
@@ -74,6 +81,7 @@
      (format t "~%!!! EMPATE (Limite de 150 jogadas atingido) !!!~%"))
     
     (t 
+     ;; Define quem joga agora, Humano ou Computador
      (let ((tipo-atual (if (= j-atual 1) tipo-j1 tipo-j2)))
        (format t "~%Turno: Jogador ~d (~a)" j-atual tipo-atual)
        
@@ -81,12 +89,14 @@
            
            ;; >>> HUMANO <<<
            (let ((jogada (ler-jogada-humana estado j-atual)))
+             ;; Aplica a jogada e chama a recursão com o adversário
              (let ((novo-estado (cdr (assoc jogada (gerar-sucessores-f2 estado j-atual) :test #'equal))))
                (ciclo-jogo novo-estado (adversario j-atual) tipo-j1 tipo-j2 tempo (1+ num-jogada))))
            
            ;; >>> COMPUTADOR <<<
            (progn
              (format t "~%O computador esta a pensar...~%")
+             ;; Começa o cronometro e chama o Negamax
              (let* ((inicio (get-internal-real-time))
                     (res (negamax-alfa-beta estado 4 -999999 999999 j-atual #'gerar-sucessores-f2 #'avaliar-estado tempo inicio))
                     (jogada (second res))
@@ -102,14 +112,21 @@
                    (progn
                      (format t "~%Jogada PC: ~a (Tempo: ~d ms | Nos: ~d)" jogada tempo-gasto nos)
                      (escrever-log-fase2 jogada nos c-alfa c-beta tempo-gasto)
+                     ;; Aplica a jogada escolhida pelo computador
                      (let ((novo-estado (cdr (assoc jogada (gerar-sucessores-f2 estado j-atual) :test #'equal))))
                        (ciclo-jogo novo-estado (adversario j-atual) tipo-j1 tipo-j2 tempo (1+ num-jogada))))))))))))
 
 ;;; --- JOGAR (Compatibilidade) ---
 (defun jogar (estado tempo)
   (let* ((inicio (get-internal-real-time))
+         ;; Tenta adivinhar de quem é a vez através do número de peças.
+         ;; Se o jogador 1 tiver mais ou o mesmo n de peças, assume-se que é a vez dele.
          (j-atual (if (>= (contar-pecas-j estado 1) (contar-pecas-j estado 2)) 1 2))
+
+         ;; Chama o nosso algoritmo principal
          (res (negamax estado 4 -999999 999999 j-atual #'gerar-sucessores-f2 #'avaliar-estado tempo inicio)))
+    ;; O negamax devolve uma lista com várias métricas, mas aqui só queremos a jogada
     (if (second res)
+        ;; Reconstrói o formato de saída exigido
         (list (second res) (cdr (assoc (second res) (gerar-sucessores-f2 estado j-atual) :test #'equal)))
         nil)))

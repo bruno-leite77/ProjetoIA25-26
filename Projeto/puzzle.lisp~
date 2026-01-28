@@ -1,114 +1,88 @@
-;;; puzzle.lisp
+;;; puzzle.lisp - Dominio Solitario 2 (Versao Final Otimizada)
 
 ;;; --- SELETORES E MODIFICADORES ---
 
-;; Devolve a linha do tabuleiro
 (defun linha (l tabuleiro) (nth (1- l) tabuleiro))
 
-;; Devolve o valor de uma determinada cÈlula, mas primeiro
-;; verifica se a coordenada est· dentro dos limites 
 (defun celula (l c tab)
   (if (or (< l 1) (> l 7) (< c 1) (> c 7)) nil (nth (1- c) (nth (1- l) tab))))
 
-;; Substitui um elemento numa linha
 (defun substituir-posicao (i lista v)
   (cond ((null lista) nil) 
-        ((= i 1) (cons v (cdr lista))) ;; Encontrou a posiÁ„o, troca o valor
+        ((= i 1) (cons v (cdr lista))) 
         (t (cons (car lista) (substituir-posicao (1- i) (cdr lista) v)))))
 
-;; Cria um tabuleiro com o valor v na posicao (l,c)
 (defun substituir (l c tab v)
   (cond ((null tab) nil)
-        ((= l 1) (cons (substituir-posicao c (car tab) v) (cdr tab))) 
+        ((= l 1) (cons (substituir-posicao c (car tab) v) (cdr tab)))
         (t (cons (car tab) (substituir (1- l) c (cdr tab) v)))))
 
-;; Troca o jogador atual
 (defun adversario (j) (if (= j 1) 2 1))
 
-;;; --- OPERADORES FASE 1 ---
-
-;; Coloca 0 na origem, 0 na peÁa saltada e 1 no destino
+;;; --- OPERADORES FASE 1 (Salto sobre a pr√≥pria pe√ßa) ---
 (defun aplicar-movimento-f1 (l c tab dl dc)
-;;     linha destino    coluna destino   linha comida    coluna comida
   (let* ((ld (+ l dl)) (cd (+ c dc)) (lm (+ l (/ dl 2))) (cm (+ c (/ dc 2))))
     (substituir ld cd (substituir lm cm (substituir l c tab 0) 0) 1)))
 
-;; Verifica se o salto È possÌvel
-;; PeÁa atual È 1; PeÁa do meio È 1; PeÁa de destino È 0
 (defun op-cd-f1 (l c tab) 
   (if (and (eql (celula l c tab) 1) (eql (celula l (1+ c) tab) 1) (eql (celula l (+ c 2) tab) 0))
       (aplicar-movimento-f1 l c tab 0 2) nil))
-;; Esquerda
 (defun op-ce-f1 (l c tab) 
   (if (and (eql (celula l c tab) 1) (eql (celula l (1- c) tab) 1) (eql (celula l (- c 2) tab) 0))
       (aplicar-movimento-f1 l c tab 0 -2) nil))
-;; Cima
 (defun op-cc-f1 (l c tab) 
   (if (and (eql (celula l c tab) 1) (eql (celula (1- l) c tab) 1) (eql (celula (- l 2) c tab) 0))
       (aplicar-movimento-f1 l c tab -2 0) nil))
-;; Baixo
 (defun op-cb-f1 (l c tab) 
   (if (and (eql (celula l c tab) 1) (eql (celula (1+ l) c tab) 1) (eql (celula (+ l 2) c tab) 0))
       (aplicar-movimento-f1 l c tab 2 0) nil))
 
-;; Lista com tudo para iterar na procura
 (defun operadores-f1 () (list #'op-cd-f1 #'op-ce-f1 #'op-cc-f1 #'op-cb-f1))
 
-;;; --- OPERADORES FASE 2 (Movimento e Captura) ---
-
-;; Aplica o movimento ou captura
+;;; --- OPERADORES FASE 2 (Movimento e Captura Adversario) ---
 (defun aplicar-mov-f2 (l c tab j dl dc tipo)
   (let ((nl (+ l dl)) (nc (+ c dc)))
     (if (eq tipo :captura)
         (let ((ml (+ l (/ dl 2))) (mc (+ c (/ dc 2))))
-          ;; na captura remove a peca do adversario, mete a 0
           (substituir nl nc (substituir ml mc (substituir l c tab 0) 0) j))
-      ;; apenas move a peÁa
         (substituir nl nc (substituir l c tab 0) j))))
-;; Gera todos os movimentos possÌveis de uma casa 
+
 (defun tentar-mov-f2 (l c tab j)
-  ;; lista de vetores (direÁ„o e salto)
-  (let ((ops '((d 0 1 nil) (e 0 -1 nil) (c -1 0 nil) (b 1 0 nil) ;; direÁ„o
-               (cd 0 2 t) (ce 0 -2 t) (cc -2 0 t) (cb 2 0 t)))) ;; saltos
+  (let ((ops '((d 0 1 nil) (e 0 -1 nil) (c -1 0 nil) (b 1 0 nil)
+               (cd 0 2 t) (ce 0 -2 t) (cc -2 0 t) (cb 2 0 t))))
     (mapcan (lambda (o)
               (let* ((dl (second o)) (dc (third o)) (cap (fourth o))
                      (nl (+ l dl)) (nc (+ c dc)) (adv (adversario j)))
-                ;; verifica se a origem È a peÁa atual e se o destino È 0
                 (if (and (eql (celula l c tab) j) (eql (celula nl nc tab) 0))
                     (if cap
-                        ;; Se for salto, verifica se estamos a comer uma peÁa advers·ria
                         (if (eql (celula (+ l (/ dl 2)) (+ c (/ dc 2)) tab) adv)
                             (list (cons (list (car o) l c) (aplicar-mov-f2 l c tab j dl dc :captura))) nil)
-                      ;; SÛ salto
                         (list (cons (list (car o) l c) (aplicar-mov-f2 l c tab j dl dc :simples))))
                     nil)))
             ops)))
 
 ;;; --- HEURISTICAS E FUNCOES AUXILIARES ---
 
-;; Conta quantos 1 existem no tabuleiro
 (defun contar-pinos (tab) 
   (if (null tab) 0 (+ (count 1 (car tab)) (contar-pinos (cdr tab)))))
 
-;; Heuristica base, quanto menos pinos melhor
 (defun h1-base (est) 
   (let ((pinos (contar-pinos est)))
     (if (zerop pinos) 0 (/ 1.0 (1+ pinos)))))
 
-;; Heuristica Extra, n˙mero de pinos restantes - 1
 (defun h2-extra (estado)
   "Heuristica Extra: Numero de Pinos - 1."
   (let ((pinos (contar-pinos estado)))
     (if (> pinos 0) (1- pinos) 0)))
 
-;;; --- AVALIACAO  FASE 2---
+;;; --- AVALIACAO CORRIGIDA (EVITA LOOP) ---
 
 (defun contar-pecas-jogador (tab j)
   (if (null tab) 0 
       (reduce #'+ (mapcar (lambda (lin) (count j lin)) tab))))
 
 (defun pontuacao-posicional (tab j)
- ;; D· pontos extra se as peÁas estiverem avanÁadas no tabuleiro
+  "D√° mais pontos se as pe√ßas estiverem perto da base inimiga."
   (let ((pontos 0)
         (l 1))
     (dolist (linha tab)
@@ -119,14 +93,14 @@
       (incf l))
     pontos))
 
-;; FunÁ„o que diz qu„o bom È o estado para o jogador J
 (defun avaliar-estado (tab j)
+  "Nova Heur√≠stica: Material (peso 50) + Posicional (peso 1)"
   (let* ((adv (adversario j))
          (pecas-eu (contar-pecas-jogador tab j))
          (pecas-ele (contar-pecas-jogador tab adv))
-         ;; Valorizar muito ter mais pecas que o adversario
+         ;; Valorizar muito ter mais pe√ßas que o advers√°rio
          (score-material (* 50 (- pecas-eu pecas-ele))) 
-         ;; Valorizar avancar no terreno (desempate)
+         ;; Valorizar avan√ßar no terreno (desempate)
          (score-posicional (- (pontuacao-posicional tab j) 
                               (pontuacao-posicional tab adv))))
     (+ score-material score-posicional)))
